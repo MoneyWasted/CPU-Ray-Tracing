@@ -6,5 +6,5 @@ If someone want to rewrite this to use the GPU that would be cool.
 
 <h4>I did not make this!</h4>
 To be honest I dont remember who made this. 
-I simple made it easy to build with Visual Studio and not some CMake shit.
+I simply made it easy to build with Visual Studio and not CMake.
 Feel free to do what ever you want with this and if you find out who the orginal author is let me know and I'll credit them.
