@@ -10,6 +10,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR sCmdLine,
 {
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 
+	HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+
+	if (FAILED(hr))
+	{
+		MessageBoxA(NULL, "CoInitializeEx failed!", "Error", MB_OK | MB_ICONERROR);
+		return 0;
+	}
+
 	if (Wnd.Create(hInstance, "CPU Ray Tracer", 800, 600))
 	{
 		Wnd.Show();
@@ -21,6 +29,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR sCmdLine,
 	}
 
 	Wnd.Destroy();
+	CoUninitialize();
 
 	return 0;
 }

@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Texture.h"
 
-#pragma comment(lib, "FreeImage.lib")
+#pragma comment(lib, "Windowscodecs.lib")
 
 extern CString ModuleDirectory, ErrorLog;
 float OD255 = 1.0f / 255;
@@ -21,57 +21,91 @@ bool CTexture::CreateTexture2D(const char* Texture2DFileName)
 	CString FileName = ModuleDirectory + Texture2DFileName;
 	CString ErrorText = "Error loading file " + FileName + "! -> ";
 
-	FREE_IMAGE_FORMAT fif = FreeImage_GetFileType(FileName);
+	int FileNameWLength = MultiByteToWideChar(CP_ACP, 0, FileName, -1, NULL, 0);
 
-	if (fif == FIF_UNKNOWN)
+	if (FileNameWLength <= 0)
 	{
-		fif = FreeImage_GetFIFFromFilename(FileName);
-	}
-
-	if (fif == FIF_UNKNOWN)
-	{
-		ErrorLog.Append(ErrorText + "fif is FIF_UNKNOWN" + "\r\n");
+		ErrorLog.Append(ErrorText + "MultiByteToWideChar failed" + "\r\n");
 		return false;
 	}
 
-	FIBITMAP* dib = NULL;
+	wchar_t* FileNameW = new wchar_t[FileNameWLength];
 
-	if (FreeImage_FIFSupportsReading(fif))
+	if (MultiByteToWideChar(CP_ACP, 0, FileName, -1, FileNameW, FileNameWLength) == 0)
 	{
-		dib = FreeImage_Load(fif, FileName);
-	}
-
-	if (dib == NULL)
-	{
-		ErrorLog.Append(ErrorText + "dib is NULL" + "\r\n");
+		delete[] FileNameW;
+		ErrorLog.Append(ErrorText + "MultiByteToWideChar failed" + "\r\n");
 		return false;
 	}
 
-	int Width = FreeImage_GetWidth(dib);
-	int Height = FreeImage_GetHeight(dib);
-	int Pitch = FreeImage_GetPitch(dib);
-	int BPP = FreeImage_GetBPP(dib);
+	IWICImagingFactory* Factory = NULL;
+	IWICBitmapDecoder* Decoder = NULL;
+	IWICBitmapFrameDecode* Frame = NULL;
+	IWICFormatConverter* Converter = NULL;
 
-	if (Width == 0 || Height == 0)
+	HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&Factory));
+
+	if (FAILED(hr))
 	{
-		FreeImage_Unload(dib);
+		delete[] FileNameW;
+		ErrorLog.Append(ErrorText + "CoCreateInstance failed" + "\r\n");
+		return false;
+	}
+
+	hr = Factory->CreateDecoderFromFilename(FileNameW, NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &Decoder);
+
+	delete[] FileNameW;
+
+	if (FAILED(hr))
+	{
+		SafeRelease(Factory);
+		ErrorLog.Append(ErrorText + "CreateDecoderFromFilename failed" + "\r\n");
+		return false;
+	}
+
+	hr = Decoder->GetFrame(0, &Frame);
+
+	if (FAILED(hr))
+	{
+		SafeRelease(Decoder);
+		SafeRelease(Factory);
+		ErrorLog.Append(ErrorText + "GetFrame failed" + "\r\n");
+		return false;
+	}
+
+	hr = Factory->CreateFormatConverter(&Converter);
+
+	if (FAILED(hr))
+	{
+		SafeRelease(Frame);
+		SafeRelease(Decoder);
+		SafeRelease(Factory);
+		ErrorLog.Append(ErrorText + "CreateFormatConverter failed" + "\r\n");
+		return false;
+	}
+
+	hr = Converter->Initialize(Frame, GUID_WICPixelFormat24bppBGR, WICBitmapDitherTypeNone, NULL, 0.0f, WICBitmapPaletteTypeCustom);
+
+	if (FAILED(hr))
+	{
+		SafeRelease(Converter);
+		SafeRelease(Frame);
+		SafeRelease(Decoder);
+		SafeRelease(Factory);
+		ErrorLog.Append(ErrorText + "Format conversion failed" + "\r\n");
+		return false;
+	}
+
+	UINT Width = 0, Height = 0;
+	hr = Converter->GetSize(&Width, &Height);
+
+	if (FAILED(hr) || Width == 0 || Height == 0)
+	{
+		SafeRelease(Converter);
+		SafeRelease(Frame);
+		SafeRelease(Decoder);
+		SafeRelease(Factory);
 		ErrorLog.Append(ErrorText + "Width or Height is 0" + "\r\n");
-		return false;
-	}
-
-	BYTE* Bits = FreeImage_GetBits(dib);
-
-	if (Bits == NULL)
-	{
-		FreeImage_Unload(dib);
-		ErrorLog.Append(ErrorText + "Bits is NULL" + "\r\n");
-		return false;
-	}
-
-	if (BPP != 24 && BPP != 32)
-	{
-		FreeImage_Unload(dib);
-		ErrorLog.Append(ErrorText + "BPP is not 24 nor 32" + "\r\n");
 		return false;
 	}
 
@@ -82,28 +116,49 @@ bool CTexture::CreateTexture2D(const char* Texture2DFileName)
 	this->Width = Width;
 	this->Height = Height;
 
-	int bpp = BPP / 8;
+	UINT Pitch = Width * 3;
+	UINT BufferSize = Pitch * Height;
+	BYTE* Bits = new BYTE[BufferSize];
+
+	hr = Converter->CopyPixels(NULL, Pitch, BufferSize, Bits);
+
+	if (FAILED(hr))
+	{
+		delete[] Bits;
+		Destroy();
+		SafeRelease(Converter);
+		SafeRelease(Frame);
+		SafeRelease(Decoder);
+		SafeRelease(Factory);
+		ErrorLog.Append(ErrorText + "CopyPixels failed" + "\r\n");
+		return false;
+	}
 
 	BYTE* data = Data, * line = Bits;
 
-	for (int y = 0; y < Height; y++)
+	for (UINT y = 0; y < Height; y++)
 	{
 		BYTE* pixel = line;
 
-		for (int x = 0; x < Width; x++)
+		for (UINT x = 0; x < Width; x++)
 		{
 			data[0] = pixel[2];
 			data[1] = pixel[1];
 			data[2] = pixel[0];
 
-			pixel += bpp;
+			pixel += 3;
 			data += 3;
 		}
 
 		line += Pitch;
 	}
 
-	FreeImage_Unload(dib);
+	delete[] Bits;
+
+	SafeRelease(Converter);
+	SafeRelease(Frame);
+	SafeRelease(Decoder);
+	SafeRelease(Factory);
 
 	return true;
 }

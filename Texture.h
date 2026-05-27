@@ -4,8 +4,6 @@
 
 #include "glmath.h"
 
-#pragma comment(lib, "FreeImage.lib")
-
 class CTexture
 {
 private:
@@ -15,6 +13,16 @@ private:
 public:
 	CTexture();
 	~CTexture();
+
+	template <typename T>
+	static void SafeRelease(T*& ptr)
+	{
+		if (ptr != NULL)
+		{
+			ptr->Release();
+			ptr = NULL;
+		}
+	}
 
 	bool CreateTexture2D(const char* Texture2DFileName);
 	vec3 GetColorNearest(float s, float t);

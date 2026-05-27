@@ -6,8 +6,8 @@
 // Standard C++ headers
 #include <stdlib.h>
 
-// External libraries
-#include "FreeImage.h"
+// Windows Imaging Component
+#include <wincodec.h>
 
 // Project stable headers
 #include "string.h"
