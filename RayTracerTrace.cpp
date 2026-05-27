@@ -1,16 +1,17 @@
 #include "stdafx.h"
-#include "RayTracer.h"
-#include "Quad.h"
-#include "Sphere.h"
-#include "Light.h"
-#include "Texture.h"
-#include "RTData.h"
+
+#include "CRayTracer.h"
+#include "CQuad.h"
+#include "CSphere.h"
+#include "CLight.h"
+#include "CTexture.h"
+#include "CRayTracerData.h"
 
 float M_1_PI_2 = (float)M_1_PI * 0.5f;
 
-vec3 CRayTracer::RayTrace(vec3& Origin, const vec3& Ray, UINT Depth, void* Object)
+Vector3 CRayTracer::RayTrace(Vector3& Origin, const Vector3& Ray, UINT Depth, void* Object)
 {
-	RTData Data;
+	CRayTracerData Data;
 
 	for (CSphere* Sphere = Spheres; Sphere < LastSphere; Sphere++)
 	{
@@ -78,7 +79,7 @@ vec3 CRayTracer::RayTrace(vec3& Origin, const vec3& Ray, UINT Depth, void* Objec
 
 		if (Data.Quad->Reflection > 0.0f)
 		{
-			vec3 ReflectedRay = reflect(Ray, Data.Quad->N);
+			Vector3 ReflectedRay = reflect(Ray, Data.Quad->N);
 
 			Data.Color = mix(Data.Color, RayTrace(Data.Point, ReflectedRay, Depth + 1, Data.Quad), Data.Quad->Reflection);
 		}
@@ -87,12 +88,12 @@ vec3 CRayTracer::RayTrace(vec3& Origin, const vec3& Ray, UINT Depth, void* Objec
 	{
 		Data.Color = Data.Sphere->Color;
 
-		vec3 Normal = (Data.Point - Data.Sphere->Position) * Data.Sphere->ODRadius;
+		Vector3 Normal = (Data.Point - Data.Sphere->Position) * Data.Sphere->ODRadius;
 
 		if (Textures && Data.Sphere->Texture)
 		{
-			float s = atan2(Normal.x, Normal.z) * M_1_PI_2 + 0.5f;
-			float t = asin(Normal.y < -1.0f ? -1.0f : Normal.y > 1.0f ? 1.0f : Normal.y) * (float)M_1_PI + 0.5f;
+			float s = atan2f(Normal.x, Normal.z) * M_1_PI_2 + 0.5f;
+			float t = asinf(Normal.y < -1.0f ? -1.0f : Normal.y > 1.0f ? 1.0f : Normal.y) * (float)M_1_PI + 0.5f;
 
 			Data.Color *= Data.Sphere->Texture->GetColorBilinear(s, t);
 		}
@@ -101,16 +102,16 @@ vec3 CRayTracer::RayTrace(vec3& Origin, const vec3& Ray, UINT Depth, void* Objec
 
 		if (Data.Sphere->Refraction > 0.0f)
 		{
-			vec3 RefractedRay = refract(Ray, Normal, Data.Sphere->ODEta);
+			Vector3 RefractedRay = refract(Ray, Normal, Data.Sphere->ODEta);
 
-			vec3 L = Data.Sphere->Position - Data.Point;
+			Vector3 L = Data.Sphere->Position - Data.Point;
 			float LdotRR = dot(L, RefractedRay);
 			float D2 = length2(L) - LdotRR * LdotRR;
-			float Distance = LdotRR + sqrt(Data.Sphere->Radius2 - D2);
+			float Distance = LdotRR + sqrtf(Data.Sphere->Radius2 - D2);
 
-			vec3 NewPoint = RefractedRay * Distance + Data.Point;
+			Vector3 NewPoint = RefractedRay * Distance + Data.Point;
 
-			vec3 NewNormal = (Data.Sphere->Position - NewPoint) * Data.Sphere->ODRadius;
+			Vector3 NewNormal = (Data.Sphere->Position - NewPoint) * Data.Sphere->ODRadius;
 
 			RefractedRay = refract(RefractedRay, NewNormal, Data.Sphere->Eta);
 
@@ -119,7 +120,7 @@ vec3 CRayTracer::RayTrace(vec3& Origin, const vec3& Ray, UINT Depth, void* Objec
 
 		if (Data.Sphere->Reflection > 0.0f)
 		{
-			vec3 ReflectedRay = reflect(Ray, Normal);
+			Vector3 ReflectedRay = reflect(Ray, Normal);
 
 			Data.Color = mix(Data.Color, RayTrace(Data.Point, ReflectedRay, Depth + 1, Data.Sphere), Data.Sphere->Reflection);
 		}

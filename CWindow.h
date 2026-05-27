@@ -1,8 +1,6 @@
 #pragma once
 
-#include <windows.h>
-
-class CWnd
+class CWindow
 {
 protected:
 	const char* WindowName;
@@ -12,8 +10,8 @@ protected:
 	POINT LastCurPos;
 
 public:
-	CWnd();
-	~CWnd();
+	CWindow();
+	~CWindow();
 
 	bool Create(HINSTANCE hInstance, const char* WindowName, int Width, int Height);
 	void RePaint();

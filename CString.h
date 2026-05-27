@@ -1,11 +1,5 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-
-// ----------------------------------------------------------------------------------------------------------------------------
-
 class CString
 {
 protected:

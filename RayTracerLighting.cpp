@@ -1,13 +1,14 @@
 #include "stdafx.h"
-#include "RayTracer.h"
-#include "Quad.h"
-#include "Sphere.h"
-#include "Light.h"
+
+#include "CRayTracer.h"
+#include "CQuad.h"
+#include "CSphere.h"
+#include "CLight.h"
 
 float TDRM = 2.0f / (float)RAND_MAX;
 float ODRM = 1.0f / (float)RAND_MAX;
 
-bool CRayTracer::Shadow(void* Object, vec3& Point, vec3& LightDirection, float LightDistance)
+bool CRayTracer::Shadow(void* Object, Vector3& Point, Vector3& LightDirection, float LightDistance)
 {
 	for (CSphere* Sphere = Spheres; Sphere < LastSphere; Sphere++)
 	{
@@ -32,12 +33,12 @@ bool CRayTracer::Shadow(void* Object, vec3& Point, vec3& LightDirection, float L
 	return false;
 }
 
-vec3 CRayTracer::LightIntensity(void* Object, vec3& Point, vec3& Normal, vec3& LightPosition, CLight* Light, float AO)
+Vector3 CRayTracer::LightIntensity(void* Object, Vector3& Point, Vector3& Normal, Vector3& LightPosition, CLight* Light, float AO)
 {
-	vec3 LightDirection = LightPosition - Point;
+	Vector3 LightDirection = LightPosition - Point;
 
 	float LightDistance2 = length2(LightDirection);
-	float LightDistance = sqrt(LightDistance2);
+	float LightDistance = sqrtf(LightDistance2);
 
 	LightDirection *= 1.0f / LightDistance;
 
@@ -71,13 +72,13 @@ vec3 CRayTracer::LightIntensity(void* Object, vec3& Point, vec3& Normal, vec3& L
 	return (Light->Sphere ? Light->Sphere->Color : Light->Quad->Color) * (Light->Ambient * AO / Attenuation);
 }
 
-float CRayTracer::AmbientOcclusionFactor(void* Object, vec3& Point, vec3& Normal)
+float CRayTracer::AmbientOcclusionFactor(void* Object, Vector3& Point, Vector3& Normal)
 {
 	float AO = 0.0f;
 
 	for (int i = 0; i < GISamples; i++)
 	{
-		vec3 RandomRay = normalize(vec3(TDRM * (float)rand() - 1.0f, TDRM * (float)rand() - 1.0f, TDRM * (float)rand() - 1.0f));
+		Vector3 RandomRay = normalize(Vector3(TDRM * (float)rand() - 1.0f, TDRM * (float)rand() - 1.0f, TDRM * (float)rand() - 1.0f));
 
 		float NdotRR = dot(Normal, RandomRay);
 
@@ -115,7 +116,7 @@ float CRayTracer::AmbientOcclusionFactor(void* Object, vec3& Point, vec3& Normal
 	return 1.0f - AO * ODGISamplesMAmbientOcclusionIntensity;
 }
 
-void CRayTracer::IlluminatePoint(void* Object, vec3& Point, vec3& Normal, vec3& Color)
+void CRayTracer::IlluminatePoint(void* Object, Vector3& Point, Vector3& Normal, Vector3& Color)
 {
 	float AO = 1.0f;
 
@@ -139,7 +140,7 @@ void CRayTracer::IlluminatePoint(void* Object, vec3& Point, vec3& Normal, vec3& 
 	}
 	else if (SoftShadows == false)
 	{
-		vec3 LightsIntensitiesSum;
+		Vector3 LightsIntensitiesSum;
 
 		for (CLight* Light = Lights; Light < LastLight; Light++)
 		{
@@ -150,7 +151,7 @@ void CRayTracer::IlluminatePoint(void* Object, vec3& Point, vec3& Normal, vec3& 
 	}
 	else
 	{
-		vec3 LightsIntensitiesSum;
+		Vector3 LightsIntensitiesSum;
 
 		for (CLight* Light = Lights; Light < LastLight; Light++)
 		{
@@ -158,9 +159,9 @@ void CRayTracer::IlluminatePoint(void* Object, vec3& Point, vec3& Normal, vec3& 
 			{
 				for (int i = 0; i < GISamples; i++)
 				{
-					vec3 RandomRay = /*normalize(*/vec3(TDRM * (float)rand() - 1.0f, TDRM * (float)rand() - 1.0f, TDRM * (float)rand() - 1.0f)/*)*/;
+					Vector3 RandomRay = /*normalize(*/Vector3(TDRM * (float)rand() - 1.0f, TDRM * (float)rand() - 1.0f, TDRM * (float)rand() - 1.0f)/*)*/;
 
-					vec3 RandomLightPosition = RandomRay * Light->Sphere->Radius + Light->Sphere->Position;
+					Vector3 RandomLightPosition = RandomRay * Light->Sphere->Radius + Light->Sphere->Position;
 
 					LightsIntensitiesSum += LightIntensity(Object, Point, Normal, RandomLightPosition, Light, AO);
 				}
@@ -172,7 +173,7 @@ void CRayTracer::IlluminatePoint(void* Object, vec3& Point, vec3& Normal, vec3& 
 					float s = ODRM * (float)rand();
 					float t = ODRM * (float)rand();
 
-					vec3 RandomLightPosition = Light->Quad->ab * s + Light->Quad->ad * t + Light->Quad->a;
+					Vector3 RandomLightPosition = Light->Quad->ab * s + Light->Quad->ad * t + Light->Quad->a;
 
 					LightsIntensitiesSum += LightIntensity(Object, Point, Normal, RandomLightPosition, Light, AO);
 				}

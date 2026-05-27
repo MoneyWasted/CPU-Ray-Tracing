@@ -1,5 +1,6 @@
 #include "stdafx.h"
-#include "Light.h"
+
+#include "CLight.h"
 
 CLight::CLight()
 {

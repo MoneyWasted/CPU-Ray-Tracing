@@ -1,8 +1,10 @@
 #include "stdafx.h"
-#include "RTData.h"
 
-RTData::RTData()
+#include "CRayTracerData.h"
+
+CRayTracerData::CRayTracerData()
 {
+	TestDistance = 0.0f;
 	Distance = 1048576.0f;
 
 	Quad = NULL;

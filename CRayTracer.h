@@ -5,7 +5,7 @@
 #include <windows.h>
 
 #include "glmath.h"
-#include "Camera.h"
+#include "CCamera.h"
 
 class CQuad;
 class CSphere;
@@ -19,8 +19,8 @@ private:
 	std::vector<BYTE> ColorBufferStorage;
 	BYTE* ColorBuffer;
 	BITMAPINFO ColorBufferInfo;
-	std::vector<vec3> HDRColorBufferStorage;
-	vec3* HDRColorBuffer;
+	std::vector<Vector3> HDRColorBufferStorage;
+	Vector3* HDRColorBuffer;
 	int Width, LineWidth, Height, Samples, GISamples, WidthMSamples, HeightMSamples, WidthMHeightMSamples2;
 	float ODSamples2, ODGISamples, AmbientOcclusionIntensity, ODGISamplesMAmbientOcclusionIntensity;
 
@@ -59,9 +59,9 @@ protected:
 	CLight* CreateLights(int Count);
 
 private:
-	bool Shadow(void* Object, vec3& Point, vec3& LightDirection, float LightDistance);
-	vec3 LightIntensity(void* Object, vec3& Point, vec3& Normal, vec3& LightPosition, CLight* Light, float AO);
-	float AmbientOcclusionFactor(void* Object, vec3& Point, vec3& Normal);
-	void IlluminatePoint(void* Object, vec3& Point, vec3& Normal, vec3& Color);
-	vec3 RayTrace(vec3& Origin, const vec3& Ray, UINT Depth = 0, void* Object = NULL);
+	bool Shadow(void* Object, Vector3& Point, Vector3& LightDirection, float LightDistance);
+	Vector3 LightIntensity(void* Object, Vector3& Point, Vector3& Normal, Vector3& LightPosition, CLight* Light, float AO);
+	float AmbientOcclusionFactor(void* Object, Vector3& Point, Vector3& Normal);
+	void IlluminatePoint(void* Object, Vector3& Point, Vector3& Normal, Vector3& Color);
+	Vector3 RayTrace(Vector3& Origin, const Vector3& Ray, UINT Depth = 0, void* Object = NULL);
 };

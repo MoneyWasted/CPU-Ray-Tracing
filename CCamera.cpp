@@ -1,14 +1,15 @@
 #include "stdafx.h"
-#include "Camera.h"
+
+#include "CCamera.h"
 
 CCamera::CCamera()
 {
-	X = vec3(1.0, 0.0, 0.0);
-	Y = vec3(0.0, 1.0, 0.0);
-	Z = vec3(0.0, 0.0, 1.0);
+	X = Vector3(1.0, 0.0, 0.0);
+	Y = Vector3(0.0, 1.0, 0.0);
+	Z = Vector3(0.0, 0.0, 1.0);
 
-	Reference = vec3(0.0, 0.0, 0.0);
-	Position = vec3(0.0, 0.0, 5.0);
+	Reference = Vector3(0.0, 0.0, 0.0);
+	Position = Vector3(0.0, 0.0, 5.0);
 
 	Bin = BiasMatrixInverse();
 }
@@ -26,13 +27,13 @@ void CCamera::CalculateRayMatrix()
 	RayMatrix = Vin * Pin * Bin * VPin;
 }
 
-void CCamera::LookAt(const vec3& Reference, const vec3& Position, bool RotateAroundReference)
+void CCamera::LookAt(const Vector3& Reference, const Vector3& Position, bool RotateAroundReference)
 {
 	this->Reference = Reference;
 	this->Position = Position;
 
 	Z = normalize(Position - Reference);
-	X = normalize(cross(vec3(0.0f, 1.0f, 0.0f), Z));
+	X = normalize(cross(Vector3(0.0f, 1.0f, 0.0f), Z));
 	Y = cross(Z, X);
 
 	if (!RotateAroundReference)
@@ -58,15 +59,15 @@ bool CCamera::OnKeyDown(UINT nChar)
 		Distance *= 2.0f;
 	}
 
-	vec3 Up(0.0f, 1.0f, 0.0f);
-	vec3 Right = X;
-	vec3 Forward = cross(Up, Right);
+	Vector3 Up(0.0f, 1.0f, 0.0f);
+	Vector3 Right = X;
+	Vector3 Forward = cross(Up, Right);
 
 	Up *= Distance;
 	Right *= Distance;
 	Forward *= Distance;
 
-	vec3 Movement;
+	Vector3 Movement;
 
 	if (nChar == 'W')
 	{
@@ -118,13 +119,13 @@ void CCamera::OnMouseMove(int dx, int dy)
 
 	if (Y.y < 0.0f)
 	{
-		Z = vec3(0.0f, Z.y > 0.0f ? 1.0f : -1.0f, 0.0f);
+		Z = Vector3(0.0f, Z.y > 0.0f ? 1.0f : -1.0f, 0.0f);
 		Y = cross(Z, X);
 	}
 
-	X = rotate(X, hangle, vec3(0.0f, 1.0f, 0.0f));
-	Y = rotate(Y, hangle, vec3(0.0f, 1.0f, 0.0f));
-	Z = rotate(Z, hangle, vec3(0.0f, 1.0f, 0.0f));
+	X = rotate(X, hangle, Vector3(0.0f, 1.0f, 0.0f));
+	Y = rotate(Y, hangle, Vector3(0.0f, 1.0f, 0.0f));
+	Z = rotate(Z, hangle, Vector3(0.0f, 1.0f, 0.0f));
 
 	Position = Reference + Z * length(Position);
 

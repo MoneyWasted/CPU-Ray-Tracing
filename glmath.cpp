@@ -1,9 +1,8 @@
 #include "stdafx.h"
+
 #include "glmath.h"
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
-mat4x4::mat4x4()
+Matrix4x4::Matrix4x4()
 {
 	M[0] = 1.0f; M[4] = 0.0f; M[8] = 0.0f; M[12] = 0.0f;
 	M[1] = 0.0f; M[5] = 1.0f; M[9] = 0.0f; M[13] = 0.0f;
@@ -11,11 +10,11 @@ mat4x4::mat4x4()
 	M[3] = 0.0f; M[7] = 0.0f; M[11] = 0.0f; M[15] = 1.0f;
 }
 
-mat4x4::~mat4x4()
+Matrix4x4::~Matrix4x4()
 {
 }
 
-mat4x4::mat4x4(const mat4x4& Matrix)
+Matrix4x4::Matrix4x4(const Matrix4x4& Matrix)
 {
 	for (int i = 0; i < 16; i++)
 	{
@@ -23,7 +22,7 @@ mat4x4::mat4x4(const mat4x4& Matrix)
 	}
 }
 
-mat4x4& mat4x4::operator = (const mat4x4& Matrix)
+Matrix4x4& Matrix4x4::operator = (const Matrix4x4& Matrix)
 {
 	for (int i = 0; i < 16; i++)
 	{
@@ -33,19 +32,19 @@ mat4x4& mat4x4::operator = (const mat4x4& Matrix)
 	return *this;
 }
 
-float& mat4x4::operator [] (int Index)
+float& Matrix4x4::operator [] (int Index)
 {
 	return M[Index];
 }
 
-float* mat4x4::operator & ()
+float* Matrix4x4::operator & ()
 {
 	return (float*)this;
 }
 
-mat4x4 operator * (const mat4x4& Matrix1, const mat4x4& Matrix2)
+Matrix4x4 operator * (const Matrix4x4& Matrix1, const Matrix4x4& Matrix2)
 {
-	mat4x4 Matrix3;
+	Matrix4x4 Matrix3;
 
 	Matrix3.M[0] = Matrix1.M[0] * Matrix2.M[0] + Matrix1.M[4] * Matrix2.M[1] + Matrix1.M[8] * Matrix2.M[2] + Matrix1.M[12] * Matrix2.M[3];
 	Matrix3.M[1] = Matrix1.M[1] * Matrix2.M[0] + Matrix1.M[5] * Matrix2.M[1] + Matrix1.M[9] * Matrix2.M[2] + Matrix1.M[13] * Matrix2.M[3];
@@ -70,19 +69,19 @@ mat4x4 operator * (const mat4x4& Matrix1, const mat4x4& Matrix2)
 	return Matrix3;
 }
 
-vec2 operator * (const mat4x4& Matrix, const vec2& Vector)
+Vector2 operator * (const Matrix4x4& Matrix, const Vector2& Vector)
 {
-	return Matrix * vec4(Vector, 0.0f, 1.0f);
+	return Matrix * Vector4(Vector, 0.0f, 1.0f);
 }
 
-vec3 operator * (const mat4x4& Matrix, const vec3& Vector)
+Vector3 operator * (const Matrix4x4& Matrix, const Vector3& Vector)
 {
-	return Matrix * vec4(Vector, 1.0f);
+	return Matrix * Vector4(Vector, 1.0f);
 }
 
-vec4 operator * (const mat4x4& Matrix, const vec4& Vector)
+Vector4 operator * (const Matrix4x4& Matrix, const Vector4& Vector)
 {
-	vec4 v;
+	Vector4 v;
 
 	v.x = Matrix.M[0] * Vector.x + Matrix.M[4] * Vector.y + Matrix.M[8] * Vector.z + Matrix.M[12] * Vector.w;
 	v.y = Matrix.M[1] * Vector.x + Matrix.M[5] * Vector.y + Matrix.M[9] * Vector.z + Matrix.M[13] * Vector.w;
@@ -92,113 +91,107 @@ vec4 operator * (const mat4x4& Matrix, const vec4& Vector)
 	return v;
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
-float dot(const vec2& u, const vec2& v)
+float dot(const Vector2& u, const Vector2& v)
 {
 	return u.x * v.x + u.y * v.y;
 }
 
-float length(const vec2& u)
+float length(const Vector2& u)
 {
-	return sqrt(u.x * u.x + u.y * u.y);
+	return sqrtf(u.x * u.x + u.y * u.y);
 }
 
-float length2(const vec2& u)
+float length2(const Vector2& u)
 {
 	return u.x * u.x + u.y * u.y;
 }
 
-vec2 normalize(const vec2& u)
+Vector2 normalize(const Vector2& u)
 {
-	return u * (1.0f / sqrt(u.x * u.x + u.y * u.y));
+	return u * (1.0f / sqrtf(u.x * u.x + u.y * u.y));
 }
 
-vec2 reflect(const vec2& i, const vec2& n)
+Vector2 reflect(const Vector2& i, const Vector2& n)
 {
 	return i - 2.0f * dot(n, i) * n;
 }
 
-vec2 refract(const vec2& i, const vec2& n, float eta)
+Vector2 refract(const Vector2& i, const Vector2& n, float eta)
 {
-	vec2 r;
+	Vector2 r;
 
 	float ndoti = dot(n, i), k = 1.0f - eta * eta * (1.0f - ndoti * ndoti);
 
 	if (k >= 0.0f)
 	{
-		r = eta * i - n * (eta * ndoti + sqrt(k));
+		r = eta * i - n * (eta * ndoti + sqrtf(k));
 	}
 
 	return r;
 }
 
-vec2 rotate(const vec2& u, float angle)
+Vector2 rotate(const Vector2& u, float angle)
 {
-	return RotationMatrix(angle, vec3(0.0f, 0.0f, 1.0f)) * vec4(u, 0.0f, 1.0f);
+	return RotationMatrix(angle, Vector3(0.0f, 0.0f, 1.0f)) * Vector4(u, 0.0f, 1.0f);
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
-vec3 cross(const vec3& u, const vec3& v)
+Vector3 cross(const Vector3& u, const Vector3& v)
 {
-	return vec3(u.y * v.z - u.z * v.y, u.z * v.x - u.x * v.z, u.x * v.y - u.y * v.x);
+	return Vector3(u.y * v.z - u.z * v.y, u.z * v.x - u.x * v.z, u.x * v.y - u.y * v.x);
 }
 
-float dot(const vec3& u, const vec3& v)
+float dot(const Vector3& u, const Vector3& v)
 {
 	return u.x * v.x + u.y * v.y + u.z * v.z;
 }
 
-float length(const vec3& u)
+float length(const Vector3& u)
 {
-	return sqrt(u.x * u.x + u.y * u.y + u.z * u.z);
+	return sqrtf(u.x * u.x + u.y * u.y + u.z * u.z);
 }
 
-float length2(const vec3& u)
+float length2(const Vector3& u)
 {
 	return u.x * u.x + u.y * u.y + u.z * u.z;
 }
 
-vec3 mix(const vec3& u, const vec3& v, float a)
+Vector3 mix(const Vector3& u, const Vector3& v, float a)
 {
 	return u * (1.0f - a) + v * a;
 }
 
-vec3 normalize(const vec3& u)
+Vector3 normalize(const Vector3& u)
 {
-	return u * (1.0f / sqrt(u.x * u.x + u.y * u.y + u.z * u.z));
+	return u * (1.0f / sqrtf(u.x * u.x + u.y * u.y + u.z * u.z));
 }
 
-vec3 reflect(const vec3& i, const vec3& n)
+Vector3 reflect(const Vector3& i, const Vector3& n)
 {
 	return i - 2.0f * dot(n, i) * n;
 }
 
-vec3 refract(const vec3& i, const vec3& n, float eta)
+Vector3 refract(const Vector3& i, const Vector3& n, float eta)
 {
-	vec3 r;
+	Vector3 r;
 
 	float ndoti = dot(n, i), k = 1.0f - eta * eta * (1.0f - ndoti * ndoti);
 
 	if (k >= 0.0f)
 	{
-		r = eta * i - n * (eta * ndoti + sqrt(k));
+		r = eta * i - n * (eta * ndoti + sqrtf(k));
 	}
 
 	return r;
 }
 
-vec3 rotate(const vec3& u, float angle, const vec3& v)
+Vector3 rotate(const Vector3& u, float angle, const Vector3& v)
 {
-	return RotationMatrix(angle, v) * vec4(u, 1.0f);
+	return RotationMatrix(angle, v) * Vector4(u, 1.0f);
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------
-
-mat4x4 BiasMatrix()
+Matrix4x4 BiasMatrix()
 {
-	mat4x4 B;
+	Matrix4x4 B;
 
 	B[0] = 0.5f; B[4] = 0.0f; B[8] = 0.0f; B[12] = 0.5f;
 	B[1] = 0.0f; B[5] = 0.5f; B[9] = 0.0f; B[13] = 0.5f;
@@ -208,9 +201,9 @@ mat4x4 BiasMatrix()
 	return B;
 }
 
-mat4x4 BiasMatrixInverse()
+Matrix4x4 BiasMatrixInverse()
 {
-	mat4x4 BI;
+	Matrix4x4 BI;
 
 	BI[0] = 2.0f; BI[4] = 0.0f; BI[8] = 0.0f; BI[12] = -1.0f;
 	BI[1] = 0.0f; BI[5] = 2.0f; BI[9] = 0.0f; BI[13] = -1.0f;
@@ -220,9 +213,9 @@ mat4x4 BiasMatrixInverse()
 	return BI;
 }
 
-mat4x4 ViewMatrix(const vec3& x, const vec3& y, const vec3& z, const vec3& position)
+Matrix4x4 ViewMatrix(const Vector3& x, const Vector3& y, const Vector3& z, const Vector3& position)
 {
-	mat4x4 V;
+	Matrix4x4 V;
 
 	V[0] = x.x;
 	V[1] = y.x;
@@ -247,9 +240,9 @@ mat4x4 ViewMatrix(const vec3& x, const vec3& y, const vec3& z, const vec3& posit
 	return V;
 }
 
-mat4x4 ViewMatrixInverse(mat4x4& V)
+Matrix4x4 ViewMatrixInverse(Matrix4x4& V)
 {
-	mat4x4 VI;
+	Matrix4x4 VI;
 
 	VI[0] = V[0];
 	VI[1] = V[4];
@@ -274,9 +267,9 @@ mat4x4 ViewMatrixInverse(mat4x4& V)
 	return VI;
 }
 
-mat4x4 OrthogonalProjectionMatrix(float left, float right, float bottom, float top, float n, float f)
+Matrix4x4 OrthogonalProjectionMatrix(float left, float right, float bottom, float top, float n, float f)
 {
-	mat4x4 OP;
+	Matrix4x4 OP;
 
 	OP[0] = 2.0f / (right - left);
 	OP[1] = 0.0f;
@@ -301,11 +294,11 @@ mat4x4 OrthogonalProjectionMatrix(float left, float right, float bottom, float t
 	return OP;
 }
 
-mat4x4 PerspectiveProjectionMatrix(float fovy, float x, float y, float n, float f)
+Matrix4x4 PerspectiveProjectionMatrix(float fovy, float x, float y, float n, float f)
 {
-	mat4x4 PP;
+	Matrix4x4 PP;
 
-	float coty = 1.0f / tan(fovy * (float)M_PI / 360.0f);
+	float coty = 1.0f / tanf(fovy * (float)M_PI / 360.0f);
 	float aspect = x / (y > 0.0f ? y : 1.0f);
 
 	PP[0] = coty / aspect;
@@ -331,9 +324,9 @@ mat4x4 PerspectiveProjectionMatrix(float fovy, float x, float y, float n, float 
 	return PP;
 }
 
-mat4x4 PerspectiveProjectionMatrixInverse(mat4x4& PP)
+Matrix4x4 PerspectiveProjectionMatrixInverse(Matrix4x4& PP)
 {
-	mat4x4 PPI;
+	Matrix4x4 PPI;
 
 	PPI[0] = 1.0f / PP[0];
 	PPI[1] = 0.0f;
@@ -358,15 +351,15 @@ mat4x4 PerspectiveProjectionMatrixInverse(mat4x4& PP)
 	return PPI;
 }
 
-mat4x4 RotationMatrix(float angle, const vec3& u)
+Matrix4x4 RotationMatrix(float angle, const Vector3& u)
 {
-	mat4x4 R;
+	Matrix4x4 R;
 
 	angle = angle / 180.0f * (float)M_PI;
 
-	vec3 v = normalize(u);
+	Vector3 v = normalize(u);
 
-	float c = 1.0f - cos(angle), s = sin(angle);
+	float c = 1.0f - cosf(angle), s = sinf(angle);
 
 	R[0] = 1.0f + c * (v.x * v.x - 1.0f);
 	R[1] = c * v.x * v.y + v.z * s;
@@ -391,9 +384,9 @@ mat4x4 RotationMatrix(float angle, const vec3& u)
 	return R;
 }
 
-mat4x4 ScaleMatrix(float x, float y, float z)
+Matrix4x4 ScaleMatrix(float x, float y, float z)
 {
-	mat4x4 S;
+	Matrix4x4 S;
 
 	S[0] = x;
 	S[1] = 0.0f;
@@ -418,9 +411,9 @@ mat4x4 ScaleMatrix(float x, float y, float z)
 	return S;
 }
 
-mat4x4 TranslationMatrix(float x, float y, float z)
+Matrix4x4 TranslationMatrix(float x, float y, float z)
 {
-	mat4x4 T;
+	Matrix4x4 T;
 
 	T[0] = 1.0f;
 	T[1] = 0.0f;

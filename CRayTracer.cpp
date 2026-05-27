@@ -1,8 +1,10 @@
 #include "stdafx.h"
-#include "RayTracer.h"
-#include "Quad.h"
-#include "Sphere.h"
-#include "Light.h"
+
+#include "CRayTracer.h"
+
+#include "CQuad.h"
+#include "CSphere.h"
+#include "CLight.h"
 
 CRayTracer::CRayTracer()
 {
@@ -32,7 +34,9 @@ CRayTracer::CRayTracer()
 	SoftShadows = false;
 	AmbientOcclusion = false;
 
-	srand(GetTickCount());
+	ULARGE_INTEGER time = {};
+	time.QuadPart = GetTickCount64();
+	srand(time.LowPart);
 }
 
 CRayTracer::~CRayTracer()
@@ -84,7 +88,7 @@ void CRayTracer::RayTrace(int Line)
 {
 	if (ColorBuffer == NULL || HDRColorBuffer == NULL) return;
 
-	vec3* hdrcolorbuffer;
+	Vector3* hdrcolorbuffer;
 	BYTE* colorbuffer = LineWidth * Line * 3 + ColorBuffer;
 
 	if (Samples == 1)
@@ -93,7 +97,7 @@ void CRayTracer::RayTrace(int Line)
 
 		for (int x = 0; x < Width; x++)
 		{
-			vec3 Color = RayTrace(Camera.Position, normalize(Camera.RayMatrix * vec3((float)x, (float)Line, 0.0f)));
+			Vector3 Color = RayTrace(Camera.Position, normalize(Camera.RayMatrix * Vector3((float)x, (float)Line, 0.0f)));
 
 			hdrcolorbuffer->r = Color.r;
 			hdrcolorbuffer->g = Color.g;
@@ -114,7 +118,7 @@ void CRayTracer::RayTrace(int Line)
 
 		for (int X = 0; X < WidthMSamples; X += Samples)
 		{
-			vec3 SamplesSum;
+			Vector3 SamplesSum;
 
 			for (int yy = 0; yy < Samples; yy++)
 			{
@@ -124,7 +128,7 @@ void CRayTracer::RayTrace(int Line)
 
 				for (int xx = 0; xx < Samples; xx++)
 				{
-					vec3 Color = RayTrace(Camera.Position, normalize(Camera.RayMatrix * vec3((float)(X + xx), (float)Yyy, 0.0f)));
+					Vector3 Color = RayTrace(Camera.Position, normalize(Camera.RayMatrix * Vector3((float)(X + xx), (float)Yyy, 0.0f)));
 
 					hdrcolorbuffer->r = Color.r;
 					hdrcolorbuffer->g = Color.g;
@@ -194,7 +198,7 @@ void CRayTracer::Resize(int Width, int Height)
 		Camera.VPin[0] = 1.0f / (float)(WidthMSamples - 1);
 		Camera.VPin[5] = 1.0f / (float)(HeightMSamples - 1);
 
-		float tany = tan(45.0f / 360.0f * (float)M_PI), aspect = (float)Width / (float)Height;
+		float tany = tanf(45.0f / 360.0f * (float)M_PI), aspect = (float)Width / (float)Height;
 
 		Camera.Pin[0] = tany * aspect;
 		Camera.Pin[5] = tany;
@@ -248,7 +252,7 @@ void CRayTracer::MapHDRColors()
 	float SumLum = 0.0f, LumWhite = 0.0f;
 	int LumNotNull = 0;
 
-	vec3* Color = HDRColorBuffer;
+	Vector3* Color = HDRColorBuffer;
 
 	for (int i = 0; i < WidthMHeightMSamples2; i++)
 	{
@@ -280,7 +284,7 @@ void CRayTracer::MapHDRColors()
 
 	Color = HDRColorBuffer;
 
-	vec3 ColorMMappingFactor;
+	Vector3 ColorMMappingFactor;
 
 	for (int i = 0; i < WidthMHeightMSamples2; i++)
 	{
@@ -329,7 +333,7 @@ void CRayTracer::MapHDRColors()
 		{
 			for (int X = 0; X < WidthMSamples; X += Samples)
 			{
-				vec3 ColorSum;
+				Vector3 ColorSum;
 
 				for (int yy = 0; yy < Samples; yy++)
 				{

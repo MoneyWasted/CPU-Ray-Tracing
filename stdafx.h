@@ -8,7 +8,3 @@
 
 // Windows Imaging Component
 #include <wincodec.h>
-
-// Project stable headers
-#include "string.h"
-#include "glmath.h"

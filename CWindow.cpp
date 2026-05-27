@@ -1,14 +1,16 @@
 #include "stdafx.h"
 
-#include "Window.h"
-#include "Camera.h"
-#include "MyRayTracer.h"
+#include "CWindow.h"
+
+#include "CString.h"
+#include "CCamera.h"
+#include "CApplication.h"
 
 extern CString ModuleDirectory, ErrorLog;
 extern CCamera Camera;
-extern CMyRayTracer RayTracer;
+extern CApplication Application;
 
-CWnd::CWnd()
+CWindow::CWindow()
 {
 	char* moduledirectory = new char[MAX_PATH];
 	GetModuleFileNameA(GetModuleHandleA(NULL), moduledirectory, MAX_PATH);
@@ -17,11 +19,11 @@ CWnd::CWnd()
 	delete[] moduledirectory;
 }
 
-CWnd::~CWnd()
+CWindow::~CWindow()
 {
 }
 
-bool CWnd::Create(HINSTANCE hInstance, const char* WindowName, int Width, int Height)
+bool CWindow::Create(HINSTANCE hInstance, const char* WindowName, int Width, int Height)
 {
 	WNDCLASSEX WndClassEx;
 
@@ -34,7 +36,7 @@ bool CWnd::Create(HINSTANCE hInstance, const char* WindowName, int Width, int He
 	WndClassEx.hIcon = LoadIcon(NULL, IDI_APPLICATION);
 	WndClassEx.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
 	WndClassEx.hCursor = LoadCursor(NULL, IDC_ARROW);
-	WndClassEx.lpszClassName = L"Win32CPURayTracerWindow";
+	WndClassEx.lpszClassName = L"Win32CPUApplicationWindow";
 
 	if (RegisterClassEx(&WndClassEx) == 0)
 	{
@@ -49,7 +51,7 @@ bool CWnd::Create(HINSTANCE hInstance, const char* WindowName, int Width, int He
 
 	DWORD Style = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 
-	if ((hWnd = CreateWindowExA(WS_EX_APPWINDOW, "Win32CPURayTracerWindow", WindowName, Style, 0, 0, Width, Height, NULL, NULL, hInstance, NULL)) == NULL)
+	if ((hWnd = CreateWindowExA(WS_EX_APPWINDOW, "Win32CPUApplicationWindow", WindowName, Style, 0, 0, Width, Height, NULL, NULL, hInstance, NULL)) == NULL)
 	{
 		ErrorLog.Set("CreateWindowExA failed!");
 		return false;
@@ -61,16 +63,16 @@ bool CWnd::Create(HINSTANCE hInstance, const char* WindowName, int Width, int He
 		return false;
 	}
 
-	return RayTracer.Init();
+	return Application.Init();
 }
 
-void CWnd::RePaint()
+void CWindow::RePaint()
 {
 	Line = 0;
 	InvalidateRect(hWnd, NULL, FALSE);
 }
 
-void CWnd::Show(bool Maximized)
+void CWindow::Show(bool Maximized)
 {
 	RECT dRect, wRect, cRect;
 
@@ -92,7 +94,7 @@ void CWnd::Show(bool Maximized)
 	ShowWindow(hWnd, Maximized ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
 }
 
-void CWnd::MsgLoop()
+void CWindow::MsgLoop()
 {
 	MSG Msg;
 
@@ -103,45 +105,45 @@ void CWnd::MsgLoop()
 	}
 }
 
-void CWnd::Destroy()
+void CWindow::Destroy()
 {
-	RayTracer.Destroy();
+	Application.Destroy();
 
 	DestroyWindow(hWnd);
 }
 
-void CWnd::OnKeyDown(UINT Key)
+void CWindow::OnKeyDown(UINT Key)
 {
 	switch (Key)
 	{
 	case '1':
-		if (RayTracer.SetSamples(1)) RePaint();
+		if (Application.SetSamples(1)) RePaint();
 		break;
 
 	case '2':
-		if (RayTracer.SetSamples(2)) RePaint();
+		if (Application.SetSamples(2)) RePaint();
 		break;
 
 	case '3':
-		if (RayTracer.SetSamples(3)) RePaint();
+		if (Application.SetSamples(3)) RePaint();
 		break;
 
 	case '4':
-		if (RayTracer.SetSamples(4)) RePaint();
+		if (Application.SetSamples(4)) RePaint();
 		break;
 
 	case VK_F1:
-		RayTracer.Textures = !RayTracer.Textures;
+		Application.Textures = !Application.Textures;
 		RePaint();
 		break;
 
 	case VK_F2:
-		RayTracer.SoftShadows = !RayTracer.SoftShadows;
+		Application.SoftShadows = !Application.SoftShadows;
 		RePaint();
 		break;
 
 	case VK_F3:
-		RayTracer.AmbientOcclusion = !RayTracer.AmbientOcclusion;
+		Application.AmbientOcclusion = !Application.AmbientOcclusion;
 		RePaint();
 		break;
 	}
@@ -152,7 +154,7 @@ void CWnd::OnKeyDown(UINT Key)
 	}
 }
 
-void CWnd::OnMouseMove(int cx, int cy)
+void CWindow::OnMouseMove(int cx, int cy)
 {
 	if (GetKeyState(VK_RBUTTON) & 0x80)
 	{
@@ -165,54 +167,54 @@ void CWnd::OnMouseMove(int cx, int cy)
 	}
 }
 
-void CWnd::OnMouseWheel(short zDelta)
+void CWindow::OnMouseWheel(short zDelta)
 {
 	Camera.OnMouseWheel(zDelta);
 
 	RePaint();
 }
 
-void CWnd::OnPaint()
+void CWindow::OnPaint()
 {
 	PAINTSTRUCT ps;
 
 	BeginPaint(hWnd, &ps);
 
-	static DWORD Start;
+	static ULONGLONG Start;
 	static bool RayTracing;
 
 	if (Line == 0)
 	{
-		RayTracer.ClearColorBuffer();
+		Application.ClearColorBuffer();
 
-		Start = GetTickCount();
+		Start = GetTickCount64();
 
 		RayTracing = true;
 	}
 
-	DWORD start = GetTickCount();
+	ULONGLONG start = GetTickCount64();
 
-	while (Line < Height && GetTickCount() - start < 250)
+	while (Line < Height && GetTickCount64() - start < 250)
 	{
-		RayTracer.RayTrace(Line++);
+		Application.RayTrace(Line++);
 	}
 
-	RayTracer.SwapBuffers(hDC);
+	Application.SwapBuffers(hDC);
 
 	if (RayTracing)
 	{
 		if (Line == Height)
 		{
 			RayTracing = false;
-			RayTracer.MapHDRColors();
+			Application.MapHDRColors();
 		}
 
-		DWORD End = GetTickCount();
+		ULONGLONG End = GetTickCount64();
 
 		CString text = WindowName;
 
 		text.Append(" - %dx%d", Width, Height);
-		text.Append(", Supersampling %dx", RayTracer.GetSamples());
+		text.Append(", Supersampling %dx", Application.GetSamples());
 		text.Append(", Time: %.03f s", (float)(End - Start) * 0.001f);
 
 		SetWindowTextA(hWnd, text);
@@ -223,23 +225,23 @@ void CWnd::OnPaint()
 	EndPaint(hWnd, &ps);
 }
 
-void CWnd::OnRButtonDown(int cx, int cy)
+void CWindow::OnRButtonDown(int cx, int cy)
 {
 	LastCurPos.x = cx;
 	LastCurPos.y = cy;
 }
 
-void CWnd::OnSize(int Width, int Height)
+void CWindow::OnSize(int Width, int Height)
 {
 	this->Width = Width;
 	this->Height = Height;
 
-	RayTracer.Resize(Width, Height);
+	Application.Resize(Width, Height);
 
 	RePaint();
 }
 
-CWnd Wnd;
+CWindow Wnd;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 {

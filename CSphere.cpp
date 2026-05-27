@@ -1,21 +1,23 @@
 #include "stdafx.h"
-#include "Sphere.h"
-#include "Texture.h"
+
+#include "CSphere.h"
+
+#include "CTexture.h"
 
 CSphere::CSphere()
 {
 }
 
-CSphere::CSphere(const vec3& Position, float Radius, const vec3& Color, CTexture* Texture, float Reflection, float Refraction, float Eta) : Position(Position), Radius(Radius), Color(Color), Texture(Texture), Reflection(Reflection), Refraction(Refraction), Eta(Eta)
+CSphere::CSphere(const Vector3& Position, float Radius, const Vector3& Color, CTexture* Texture, float Reflection, float Refraction, float Eta) : Position(Position), Radius(Radius), Color(Color), Texture(Texture), Reflection(Reflection), Refraction(Refraction), Eta(Eta)
 {
 	Radius2 = Radius * Radius;
 	ODRadius = 1.0f / Radius;
 	ODEta = 1.0f / Eta;
 }
 
-bool CSphere::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance, float& Distance, vec3& Point)
+bool CSphere::Intersect(Vector3& Origin, const Vector3& Ray, float MaxDistance, float& Distance, Vector3& Point)
 {
-	vec3 L = Position - Origin;
+	Vector3 L = Position - Origin;
 
 	float LdotR = dot(L, Ray);
 
@@ -25,7 +27,7 @@ bool CSphere::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance, float&
 
 		if (D2 < Radius2)
 		{
-			Distance = LdotR - sqrt(Radius2 - D2);
+			Distance = LdotR - sqrtf(Radius2 - D2);
 
 			if (Distance >= 0.0f && Distance < MaxDistance)
 			{
@@ -39,9 +41,9 @@ bool CSphere::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance, float&
 	return false;
 }
 
-bool CSphere::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance, float& Distance)
+bool CSphere::Intersect(Vector3& Origin, const Vector3& Ray, float MaxDistance, float& Distance)
 {
-	vec3 L = Position - Origin;
+	Vector3 L = Position - Origin;
 
 	float LdotR = dot(L, Ray);
 
@@ -51,7 +53,7 @@ bool CSphere::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance, float&
 
 		if (D2 < Radius2)
 		{
-			Distance = LdotR - sqrt(Radius2 - D2);
+			Distance = LdotR - sqrtf(Radius2 - D2);
 
 			if (Distance >= 0.0f && Distance < MaxDistance)
 			{
@@ -63,9 +65,9 @@ bool CSphere::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance, float&
 	return false;
 }
 
-bool CSphere::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance)
+bool CSphere::Intersect(Vector3& Origin, const Vector3& Ray, float MaxDistance)
 {
-	vec3 L = Position - Origin;
+	Vector3 L = Position - Origin;
 
 	float LdotR = dot(L, Ray);
 
@@ -75,7 +77,7 @@ bool CSphere::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance)
 
 		if (D2 < Radius2)
 		{
-			float Distance = LdotR - sqrt(Radius2 - D2);
+			float Distance = LdotR - sqrtf(Radius2 - D2);
 
 			if (Distance >= 0.0f && Distance < MaxDistance)
 			{

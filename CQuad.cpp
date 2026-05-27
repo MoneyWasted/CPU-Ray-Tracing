@@ -1,12 +1,14 @@
 #include "stdafx.h"
-#include "Quad.h"
-#include "Texture.h"
+
+#include "CQuad.h"
+
+#include "CTexture.h"
 
 CQuad::CQuad()
 {
 }
 
-CQuad::CQuad(const vec3& a, const vec3& b, const vec3& c, const vec3& d, const vec3& Color, CTexture* Texture, float Reflection, float Refraction, float Eta) : a(a), b(b), c(c), d(d), N(N), D(D), Color(Color), Texture(Texture), Reflection(Reflection), Refraction(Refraction), Eta(Eta)
+CQuad::CQuad(const Vector3& a, const Vector3& b, const Vector3& c, const Vector3& d, const Vector3& Color, CTexture* Texture, float Reflection, float Refraction, float Eta) : a(a), b(b), c(c), d(d), N(N), D(D), Color(Color), Texture(Texture), Reflection(Reflection), Refraction(Refraction), Eta(Eta)
 {
 	ab = b - a;
 	ad = d - a;
@@ -15,7 +17,7 @@ CQuad::CQuad(const vec3& a, const vec3& b, const vec3& c, const vec3& d, const v
 	T = normalize(b - a);
 	N = normalize(cross(b - a, c - a));
 	B = cross(N, T);
-	O = vec3(dot(T, a), dot(B, a), dot(N, a));
+	O = Vector3(dot(T, a), dot(B, a), dot(N, a));
 
 	D = -dot(N, a);
 	ODEta = 1.0f / Eta;
@@ -33,7 +35,7 @@ CQuad::CQuad(const vec3& a, const vec3& b, const vec3& c, const vec3& d, const v
 	D4 = -dot(N4, d);
 }
 
-bool CQuad::Inside(const vec3& Point)
+bool CQuad::Inside(const Vector3& Point)
 {
 	if (dot(N1, Point) + D1 < 0.0f) return false;
 	if (dot(N2, Point) + D2 < 0.0f) return false;
@@ -43,7 +45,7 @@ bool CQuad::Inside(const vec3& Point)
 	return true;
 }
 
-bool CQuad::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance, float& Distance, vec3& Point)
+bool CQuad::Intersect(Vector3& Origin, const Vector3& Ray, float MaxDistance, float& Distance, Vector3& Point)
 {
 	float NdotR = -dot(N, Ray);
 
@@ -62,7 +64,7 @@ bool CQuad::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance, float& D
 	return false;
 }
 
-bool CQuad::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance, float& Distance)
+bool CQuad::Intersect(Vector3& Origin, const Vector3& Ray, float MaxDistance, float& Distance)
 {
 	float NdotR = -dot(N, Ray);
 
@@ -79,7 +81,7 @@ bool CQuad::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance, float& D
 	return false;
 }
 
-bool CQuad::Intersect(vec3& Origin, const vec3& Ray, float MaxDistance)
+bool CQuad::Intersect(Vector3& Origin, const Vector3& Ray, float MaxDistance)
 {
 	float NdotR = -dot(N, Ray);
 

@@ -1,3 +1,4 @@
-
 .vs
-Release
+bin
+obj
+*.vcxproj.user

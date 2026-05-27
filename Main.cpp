@@ -1,12 +1,18 @@
 #include "stdafx.h"
-#include "Window.h"
-#include "MyRayTracer.h"
 
-extern CWnd Wnd;
+#include "CWindow.h"
+#include "CApplication.h"
+#include "CString.h"
+
+extern CWindow Wnd;
 
 CString ModuleDirectory, ErrorLog;
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR sCmdLine, int iShow)
+int APIENTRY WinMain(
+	_In_ HINSTANCE hInstance,
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPSTR lpCmdLine,
+	_In_ int nCmdShow)
 {
 	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 

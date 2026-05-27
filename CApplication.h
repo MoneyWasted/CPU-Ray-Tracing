@@ -1,9 +1,9 @@
 #pragma once
 
-#include "RayTracer.h"
-#include "Texture.h"
+#include "CRayTracer.h"
+#include "CTexture.h"
 
-class CMyRayTracer : public CRayTracer
+class CApplication : public CRayTracer
 {
 private:
 	CTexture Floor, Cube, Earth;

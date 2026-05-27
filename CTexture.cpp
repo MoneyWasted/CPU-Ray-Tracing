@@ -1,5 +1,8 @@
 #include "stdafx.h"
-#include "Texture.h"
+
+#include "CTexture.h"
+
+#include "CString.h"
 
 #pragma comment(lib, "Windowscodecs.lib")
 
@@ -163,9 +166,9 @@ bool CTexture::CreateTexture2D(const char* Texture2DFileName)
 	return true;
 }
 
-vec3 CTexture::GetColorNearest(float s, float t)
+Vector3 CTexture::GetColorNearest(float s, float t)
 {
-	vec3 Color = vec3(1.0f);
+	Vector3 Color = Vector3(1.0f);
 
 	if (Data != NULL)
 	{
@@ -187,9 +190,9 @@ vec3 CTexture::GetColorNearest(float s, float t)
 	return Color;
 }
 
-vec3 CTexture::GetColorBilinear(float s, float t)
+Vector3 CTexture::GetColorBilinear(float s, float t)
 {
-	vec3 Color = vec3(1.0f);
+	Vector3 Color = Vector3(1.0f);
 
 	if (Data != NULL)
 	{
