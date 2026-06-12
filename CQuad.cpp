@@ -8,7 +8,26 @@ CQuad::CQuad()
 {
 }
 
-CQuad::CQuad(const Vector3& a, const Vector3& b, const Vector3& c, const Vector3& d, const Vector3& Color, CTexture* Texture, float Reflection, float Refraction, float Eta) : a(a), b(b), c(c), d(d), N(N), D(D), Color(Color), Texture(Texture), Reflection(Reflection), Refraction(Refraction), Eta(Eta)
+CQuad::CQuad(
+	const Vector3& a,
+	const Vector3& b,
+	const Vector3& c,
+	const Vector3& d,
+	const Vector3& Color,
+	CTexture* Texture,
+	float Reflection,
+	float Refraction,
+	float Eta
+) :
+	Reflection(Reflection),
+	Refraction(Refraction),
+	Eta(Eta),
+	a(a),
+	b(b),
+	c(c),
+	d(d),
+	Color(Color),
+	Texture(Texture)
 {
 	ab = b - a;
 	ad = d - a;
@@ -45,55 +64,27 @@ bool CQuad::Inside(const Vector3& Point)
 	return true;
 }
 
-bool CQuad::Intersect(Vector3& Origin, const Vector3& Ray, float MaxDistance, float& Distance, Vector3& Point)
+bool CQuad::Intersect(const Vector3& Origin, const Vector3& Ray, float MaxDistance, float& Distance, Vector3& Point)
 {
 	float NdotR = -dot(N, Ray);
+	if (NdotR <= 0.0f) return false;
 
-	if (NdotR > 0.0f)
-	{
-		Distance = (dot(N, Origin) + D) / NdotR;
+	Distance = (dot(N, Origin) + D) / NdotR;
+	if (Distance < 0.0f || Distance >= MaxDistance) return false;
 
-		if (Distance >= 0.0f && Distance < MaxDistance)
-		{
-			Point = Ray * Distance + Origin;
-
-			return Inside(Point);
-		}
-	}
-
-	return false;
+	Point = Ray * Distance + Origin;
+	return Inside(Point);
 }
 
-bool CQuad::Intersect(Vector3& Origin, const Vector3& Ray, float MaxDistance, float& Distance)
+bool CQuad::Intersect(const Vector3& Origin, const Vector3& Ray, float MaxDistance, float& Distance)
 {
-	float NdotR = -dot(N, Ray);
-
-	if (NdotR > 0.0f)
-	{
-		Distance = (dot(N, Origin) + D) / NdotR;
-
-		if (Distance >= 0.0f && Distance < MaxDistance)
-		{
-			return Inside(Ray * Distance + Origin);
-		}
-	}
-
-	return false;
+	Vector3 Point;
+	return Intersect(Origin, Ray, MaxDistance, Distance, Point);
 }
 
-bool CQuad::Intersect(Vector3& Origin, const Vector3& Ray, float MaxDistance)
+bool CQuad::Intersect(const Vector3& Origin, const Vector3& Ray, float MaxDistance)
 {
-	float NdotR = -dot(N, Ray);
-
-	if (NdotR > 0.0f)
-	{
-		float Distance = (dot(N, Origin) + D) / NdotR;
-
-		if (Distance >= 0.0f && Distance < MaxDistance)
-		{
-			return Inside(Ray * Distance + Origin);
-		}
-	}
-
-	return false;
+	float Distance;
+	Vector3 Point;
+	return Intersect(Origin, Ray, MaxDistance, Distance, Point);
 }

@@ -1,26 +1,19 @@
 #pragma once
 
+#include <vector>
+#include <windows.h>
+
 #include "glmath.h"
 
 class CTexture
 {
 private:
-	BYTE* Data;
+	std::vector<BYTE> Data;
 	int Width, Height;
 
 public:
 	CTexture();
 	~CTexture();
-
-	template <typename T>
-	static void SafeRelease(T*& ptr)
-	{
-		if (ptr != NULL)
-		{
-			ptr->Release();
-			ptr = NULL;
-		}
-	}
 
 	bool CreateTexture2D(const char* Texture2DFileName);
 	Vector3 GetColorNearest(float s, float t);

@@ -2,7 +2,7 @@
 
 class CString
 {
-protected:
+private:
 	char* String;
 
 public:

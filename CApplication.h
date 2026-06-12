@@ -8,7 +8,15 @@ class CApplication : public CRayTracer
 private:
 	CTexture Floor, Cube, Earth;
 
-protected:
 	bool InitScene() override;
 	void DestroyTextures() override;
+
+public:
+	CApplication() = default;
+	virtual ~CApplication() = default;
+
+	CApplication(const CApplication&) = delete;
+	CApplication& operator=(const CApplication&) = delete;
+	CApplication(CApplication&&) = delete;
+	CApplication& operator=(CApplication&&) = delete;
 };

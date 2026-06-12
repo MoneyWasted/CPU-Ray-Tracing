@@ -7,12 +7,30 @@
 #pragma comment(lib, "Windowscodecs.lib")
 
 extern CString ModuleDirectory, ErrorLog;
-float OD255 = 1.0f / 255;
+static const float OD255 = 1.0f / 255.0f;
 
-CTexture::CTexture()
+namespace
 {
-	Data = NULL;
-	Width = Height = 0;
+	template <typename T>
+	void SafeRelease(T*& ptr)
+	{
+		if (ptr != nullptr)
+		{
+			ptr->Release();
+			ptr = nullptr;
+		}
+	}
+
+	float WrapTextureCoord(float value)
+	{
+		value -= static_cast<float>(static_cast<int>(value));
+		if (value < 0.0f) value += 1.0f;
+		return value;
+	}
+}
+
+CTexture::CTexture() : Width(0), Height(0)
+{
 }
 
 CTexture::~CTexture()
@@ -24,7 +42,7 @@ bool CTexture::CreateTexture2D(const char* Texture2DFileName)
 	CString FileName = ModuleDirectory + Texture2DFileName;
 	CString ErrorText = "Error loading file " + FileName + "! -> ";
 
-	int FileNameWLength = MultiByteToWideChar(CP_ACP, 0, FileName, -1, NULL, 0);
+	int FileNameWLength = MultiByteToWideChar(CP_ACP, 0, FileName, -1, nullptr, 0);
 
 	if (FileNameWLength <= 0)
 	{
@@ -32,7 +50,7 @@ bool CTexture::CreateTexture2D(const char* Texture2DFileName)
 		return false;
 	}
 
-	wchar_t* FileNameW = new wchar_t[FileNameWLength];
+	wchar_t* FileNameW = new wchar_t[static_cast<size_t>(FileNameWLength)];
 
 	if (MultiByteToWideChar(CP_ACP, 0, FileName, -1, FileNameW, FileNameWLength) == 0)
 	{
@@ -41,12 +59,12 @@ bool CTexture::CreateTexture2D(const char* Texture2DFileName)
 		return false;
 	}
 
-	IWICImagingFactory* Factory = NULL;
-	IWICBitmapDecoder* Decoder = NULL;
-	IWICBitmapFrameDecode* Frame = NULL;
-	IWICFormatConverter* Converter = NULL;
+	IWICImagingFactory* Factory = nullptr;
+	IWICBitmapDecoder* Decoder = nullptr;
+	IWICBitmapFrameDecode* Frame = nullptr;
+	IWICFormatConverter* Converter = nullptr;
 
-	HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&Factory));
+	HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&Factory));
 
 	if (FAILED(hr))
 	{
@@ -55,7 +73,7 @@ bool CTexture::CreateTexture2D(const char* Texture2DFileName)
 		return false;
 	}
 
-	hr = Factory->CreateDecoderFromFilename(FileNameW, NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &Decoder);
+	hr = Factory->CreateDecoderFromFilename(FileNameW, nullptr, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &Decoder);
 
 	delete[] FileNameW;
 
@@ -87,7 +105,7 @@ bool CTexture::CreateTexture2D(const char* Texture2DFileName)
 		return false;
 	}
 
-	hr = Converter->Initialize(Frame, GUID_WICPixelFormat24bppBGR, WICBitmapDitherTypeNone, NULL, 0.0f, WICBitmapPaletteTypeCustom);
+	hr = Converter->Initialize(Frame, GUID_WICPixelFormat24bppBGR, WICBitmapDitherTypeNone, nullptr, 0.0f, WICBitmapPaletteTypeCustom);
 
 	if (FAILED(hr))
 	{
@@ -99,10 +117,10 @@ bool CTexture::CreateTexture2D(const char* Texture2DFileName)
 		return false;
 	}
 
-	UINT Width = 0, Height = 0;
-	hr = Converter->GetSize(&Width, &Height);
+	UINT texWidth = 0, texHeight = 0;
+	hr = Converter->GetSize(&texWidth, &texHeight);
 
-	if (FAILED(hr) || Width == 0 || Height == 0)
+	if (FAILED(hr) || texWidth == 0 || texHeight == 0)
 	{
 		SafeRelease(Converter);
 		SafeRelease(Frame);
@@ -114,20 +132,19 @@ bool CTexture::CreateTexture2D(const char* Texture2DFileName)
 
 	Destroy();
 
-	Data = new BYTE[Width * Height * 3];
+	Width = (int)texWidth;
+	Height = (int)texHeight;
 
-	this->Width = Width;
-	this->Height = Height;
+	UINT Pitch = texWidth * 3;
+	UINT BufferSize = Pitch * texHeight;
+	Data.resize(BufferSize);
 
-	UINT Pitch = Width * 3;
-	UINT BufferSize = Pitch * Height;
-	BYTE* Bits = new BYTE[BufferSize];
+	std::vector<BYTE> Bits(BufferSize);
 
-	hr = Converter->CopyPixels(NULL, Pitch, BufferSize, Bits);
+	hr = Converter->CopyPixels(nullptr, Pitch, BufferSize, Bits.data());
 
 	if (FAILED(hr))
 	{
-		delete[] Bits;
 		Destroy();
 		SafeRelease(Converter);
 		SafeRelease(Frame);
@@ -137,13 +154,14 @@ bool CTexture::CreateTexture2D(const char* Texture2DFileName)
 		return false;
 	}
 
-	BYTE* data = Data, * line = Bits;
+	BYTE* data = Data.data();
+	const BYTE* line = Bits.data();
 
-	for (UINT y = 0; y < Height; y++)
+	for (int y = 0; y < Height; y++)
 	{
-		BYTE* pixel = line;
+		const BYTE* pixel = line;
 
-		for (UINT x = 0; x < Width; x++)
+		for (int x = 0; x < Width; x++)
 		{
 			data[0] = pixel[2];
 			data[1] = pixel[1];
@@ -155,8 +173,6 @@ bool CTexture::CreateTexture2D(const char* Texture2DFileName)
 
 		line += Pitch;
 	}
-
-	delete[] Bits;
 
 	SafeRelease(Converter);
 	SafeRelease(Frame);
@@ -170,17 +186,14 @@ Vector3 CTexture::GetColorNearest(float s, float t)
 {
 	Vector3 Color = Vector3(1.0f);
 
-	if (Data != NULL)
+	if (!Data.empty())
 	{
-		s -= (int)s;
-		t -= (int)t;
+		s = WrapTextureCoord(s);
+		t = WrapTextureCoord(t);
 
-		if (s < 0.0f) s += 1.0f;
-		if (t < 0.0f) t += 1.0f;
+		int x = (int)(s * static_cast<float>(Width)), y = (int)(t * static_cast<float>(Height));
 
-		int x = (int)(s * Width), y = (int)(t * Height);
-
-		BYTE* data = (Width * y + x) * 3 + Data;
+		const BYTE* data = (Width * y + x) * 3 + Data.data();
 
 		Color.r = OD255 * data[0];
 		Color.g = OD255 * data[1];
@@ -194,34 +207,31 @@ Vector3 CTexture::GetColorBilinear(float s, float t)
 {
 	Vector3 Color = Vector3(1.0f);
 
-	if (Data != NULL)
+	if (!Data.empty())
 	{
-		s -= (int)s;
-		t -= (int)t;
+		s = WrapTextureCoord(s);
+		t = WrapTextureCoord(t);
 
-		if (s < 0.0f) s += 1.0f;
-		if (t < 0.0f) t += 1.0f;
+		float dx = s * static_cast<float>(Width) - 0.5f, dy = t * static_cast<float>(Height) - 0.5f;
 
-		float dx = s * Width - 0.5f, dy = t * Height - 0.5f;
-
-		if (dx < 0.0f) dx += Width;
-		if (dy < 0.0f) dy += Height;
+		if (dx < 0.0f) dx += static_cast<float>(Width);
+		if (dy < 0.0f) dy += static_cast<float>(Height);
 
 		int x0 = (int)dx, y0 = (int)dy, x1 = (x0 + 1) % Width, y1 = (y0 + 1) % Height;
 
 		int Width3 = Width * 3;
 
-		BYTE* y0w = y0 * Width3 + Data;
-		BYTE* y1w = y1 * Width3 + Data;
+		const BYTE* y0w = y0 * Width3 + Data.data();
+		const BYTE* y1w = y1 * Width3 + Data.data();
 
 		int x03 = x0 * 3, x13 = x1 * 3;
 
-		BYTE* a = y0w + x03;
-		BYTE* b = y0w + x13;
-		BYTE* c = y1w + x13;
-		BYTE* d = y1w + x03;
+		const BYTE* a = y0w + x03;
+		const BYTE* b = y0w + x13;
+		const BYTE* c = y1w + x13;
+		const BYTE* d = y1w + x03;
 
-		float u1 = dx - x0, v1 = dy - y0, u0 = 1.0f - u1, v0 = 1.0f - v1;
+		float u1 = dx - static_cast<float>(x0), v1 = dy - static_cast<float>(y0), u0 = 1.0f - u1, v0 = 1.0f - v1;
 
 		u0 *= OD255;
 		u1 *= OD255;
@@ -238,10 +248,7 @@ Vector3 CTexture::GetColorBilinear(float s, float t)
 
 void CTexture::Destroy()
 {
-	if (Data != NULL)
-	{
-		delete[] Data;
-		Data = NULL;
-		Width = Height = 0;
-	}
+	Data.clear();
+	Data.shrink_to_fit();
+	Width = Height = 0;
 }

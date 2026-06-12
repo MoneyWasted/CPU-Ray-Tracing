@@ -6,87 +6,88 @@
 #include "CSphere.h"
 #include "CLight.h"
 
-CRayTracer::CRayTracer()
+namespace
 {
-	ColorBuffer = NULL;
-	HDRColorBuffer = NULL;
+	float Clamp01(float value)
+	{
+		if (value <= 0.0f) return 0.0f;
+		if (value >= 1.0f) return 1.0f;
+		return value;
+	}
 
-	Samples = 1;
-	GISamples = 16;
+	BYTE ToByte(float value)
+	{
+		return (BYTE)(Clamp01(value) * 255.0f);
+	}
+}
 
-	ODGISamples = 1.0f / (float)GISamples;
-	AmbientOcclusionIntensity = 0.5f;
-	ODGISamplesMAmbientOcclusionIntensity = ODGISamples * AmbientOcclusionIntensity;
-
-	Quads = NULL;
-	Spheres = NULL;
-	Lights = NULL;
-
-	LastQuad = NULL;
-	LastSphere = NULL;
-	LastLight = NULL;
-
-	QuadsCount = 0;
-	SpheresCount = 0;
-	LightsCount = 0;
-
-	Textures = true;
-	SoftShadows = false;
-	AmbientOcclusion = false;
-
-	ULARGE_INTEGER time = {};
-	time.QuadPart = GetTickCount64();
-	srand(time.LowPart);
+CRayTracer::CRayTracer() :
+	ColorBuffer(nullptr),
+	HDRColorBuffer(nullptr),
+	Width(0), LineWidth(0), Height(0),
+	Samples(1),
+	GISamples(16),
+	WidthMSamples(0), HeightMSamples(0), WidthMHeightMSamples2(0),
+	ODSamples2(1.0f),
+	ODGISamples(1.0f / 16.0f),
+	AmbientOcclusionIntensity(0.5f),
+	ODGISamplesMAmbientOcclusionIntensity(1.0f / 16.0f * 0.5f),
+	Quads(nullptr), LastQuad(nullptr),
+	Spheres(nullptr), LastSphere(nullptr),
+	Lights(nullptr), LastLight(nullptr),
+	QuadsCount(0), SpheresCount(0), LightsCount(0),
+	Textures(true), SoftShadows(false), AmbientOcclusion(false)
+{
+	srand((unsigned int)GetTickCount64());
 }
 
 CRayTracer::~CRayTracer()
-{
-}
+{}
 
 CQuad* CRayTracer::CreateQuads(int Count)
 {
-	QuadStorage.reset(Count > 0 ? new CQuad[Count] : NULL);
+	QuadStorage.reset(Count > 0 ? new CQuad[static_cast<size_t>(Count)] : nullptr);
 	Quads = QuadStorage.get();
 	QuadsCount = Count;
-	LastQuad = NULL;
+	LastQuad = nullptr;
 	return Quads;
 }
 
 CSphere* CRayTracer::CreateSpheres(int Count)
 {
-	SphereStorage.reset(Count > 0 ? new CSphere[Count] : NULL);
+	SphereStorage.reset(Count > 0 ? new CSphere[static_cast<size_t>(Count)] : nullptr);
 	Spheres = SphereStorage.get();
 	SpheresCount = Count;
-	LastSphere = NULL;
+	LastSphere = nullptr;
 	return Spheres;
 }
 
 CLight* CRayTracer::CreateLights(int Count)
 {
-	LightStorage.reset(Count > 0 ? new CLight[Count] : NULL);
+	LightStorage.reset(Count > 0 ? new CLight[static_cast<size_t>(Count)] : nullptr);
 	Lights = LightStorage.get();
 	LightsCount = Count;
-	LastLight = NULL;
+	LastLight = nullptr;
 	return Lights;
 }
 
 bool CRayTracer::Init()
 {
-	if (InitScene() == false)
+	if (!InitScene())
 	{
 		return false;
 	}
 
-	LastQuad = Quads ? Quads + QuadsCount : NULL;
-	LastSphere = Spheres ? Spheres + SpheresCount : NULL;
-	LastLight = Lights ? Lights + LightsCount : NULL;
+	LastQuad = Quads ? Quads + QuadsCount : nullptr;
+	LastSphere = Spheres ? Spheres + SpheresCount : nullptr;
+	LastLight = Lights ? Lights + LightsCount : nullptr;
 
 	return true;
 }
 
 void CRayTracer::RayTrace(int Line)
 {
-	if (ColorBuffer == NULL || HDRColorBuffer == NULL) return;
+	if (ColorBuffer == nullptr || HDRColorBuffer == nullptr) return;
 
 	Vector3* hdrcolorbuffer;
 	BYTE* colorbuffer = LineWidth * Line * 3 + ColorBuffer;
@@ -99,15 +100,11 @@ void CRayTracer::RayTrace(int Line)
 		{
 			Vector3 Color = RayTrace(Camera.Position, normalize(Camera.RayMatrix * Vector3((float)x, (float)Line, 0.0f)));
 
-			hdrcolorbuffer->r = Color.r;
-			hdrcolorbuffer->g = Color.g;
-			hdrcolorbuffer->b = Color.b;
+			*hdrcolorbuffer++ = Color;
 
-			hdrcolorbuffer++;
-
-			colorbuffer[2] = Color.r <= 0.0f ? 0 : Color.r >= 1.0 ? 255 : (BYTE)(Color.r * 255);
-			colorbuffer[1] = Color.g <= 0.0f ? 0 : Color.g >= 1.0 ? 255 : (BYTE)(Color.g * 255);
-			colorbuffer[0] = Color.b <= 0.0f ? 0 : Color.b >= 1.0 ? 255 : (BYTE)(Color.b * 255);
+			colorbuffer[2] = ToByte(Color.r);
+			colorbuffer[1] = ToByte(Color.g);
+			colorbuffer[0] = ToByte(Color.b);
 
 			colorbuffer += 3;
 		}
@@ -130,15 +127,11 @@ void CRayTracer::RayTrace(int Line)
 				{
 					Vector3 Color = RayTrace(Camera.Position, normalize(Camera.RayMatrix * Vector3((float)(X + xx), (float)Yyy, 0.0f)));
 
-					hdrcolorbuffer->r = Color.r;
-					hdrcolorbuffer->g = Color.g;
-					hdrcolorbuffer->b = Color.b;
+					*hdrcolorbuffer++ = Color;
 
-					hdrcolorbuffer++;
-
-					SamplesSum.r += Color.r <= 0.0f ? 0.0f : Color.r >= 1.0 ? 1.0f : Color.r;
-					SamplesSum.g += Color.g <= 0.0f ? 0.0f : Color.g >= 1.0 ? 1.0f : Color.g;
-					SamplesSum.b += Color.b <= 0.0f ? 0.0f : Color.b >= 1.0 ? 1.0f : Color.b;
+					SamplesSum.r += Clamp01(Color.r);
+					SamplesSum.g += Clamp01(Color.g);
+					SamplesSum.b += Clamp01(Color.b);
 				}
 			}
 
@@ -146,37 +139,30 @@ void CRayTracer::RayTrace(int Line)
 			SamplesSum.g *= ODSamples2;
 			SamplesSum.b *= ODSamples2;
 
-			colorbuffer[2] = (BYTE)(SamplesSum.r * 255);
-			colorbuffer[1] = (BYTE)(SamplesSum.g * 255);
-			colorbuffer[0] = (BYTE)(SamplesSum.b * 255);
+			colorbuffer[2] = ToByte(SamplesSum.r);
+			colorbuffer[1] = ToByte(SamplesSum.g);
+			colorbuffer[0] = ToByte(SamplesSum.b);
 
 			colorbuffer += 3;
 		}
 	}
 }
 
-void CRayTracer::Resize(int Width, int Height)
+void CRayTracer::Resize(int newWidth, int newHeight)
 {
-	this->Width = Width;
-	this->Height = Height;
+	Width = newWidth;
+	Height = newHeight;
 
 	ColorBufferStorage.clear();
 	HDRColorBufferStorage.clear();
-	ColorBuffer = NULL;
-	HDRColorBuffer = NULL;
+	ColorBuffer = nullptr;
+	HDRColorBuffer = nullptr;
 
 	if (Width > 0 && Height > 0)
 	{
-		LineWidth = Width;
+		LineWidth = (Width + 3) & ~3;
 
-		int WidthMod4 = Width % 4;
-
-		if (WidthMod4 > 0)
-		{
-			LineWidth += 4 - WidthMod4;
-		}
-
-		ColorBufferStorage.resize(LineWidth * Height * 3);
+		ColorBufferStorage.resize(static_cast<size_t>(LineWidth) * static_cast<size_t>(Height) * 3);
 		ColorBuffer = ColorBufferStorage.data();
 
 		memset(&ColorBufferInfo, 0, sizeof(BITMAPINFOHEADER));
@@ -192,7 +178,7 @@ void CRayTracer::Resize(int Width, int Height)
 		WidthMHeightMSamples2 = WidthMSamples * HeightMSamples;
 		ODSamples2 = 1.0f / (float)(Samples * Samples);
 
-		HDRColorBufferStorage.resize(WidthMHeightMSamples2);
+		HDRColorBufferStorage.resize(static_cast<size_t>(WidthMHeightMSamples2));
 		HDRColorBuffer = HDRColorBufferStorage.data();
 
 		Camera.VPin[0] = 1.0f / (float)(WidthMSamples - 1);
@@ -216,27 +202,27 @@ void CRayTracer::Destroy()
 	QuadStorage.reset();
 	SphereStorage.reset();
 	LightStorage.reset();
-	Quads = NULL;
-	Spheres = NULL;
-	Lights = NULL;
+	Quads = nullptr;
+	Spheres = nullptr;
+	Lights = nullptr;
 	QuadsCount = 0;
 	SpheresCount = 0;
 	LightsCount = 0;
-	LastQuad = NULL;
-	LastSphere = NULL;
-	LastLight = NULL;
+	LastQuad = nullptr;
+	LastSphere = nullptr;
+	LastLight = nullptr;
 
 	ColorBufferStorage.clear();
 	HDRColorBufferStorage.clear();
-	ColorBuffer = NULL;
-	HDRColorBuffer = NULL;
+	ColorBuffer = nullptr;
+	HDRColorBuffer = nullptr;
 }
 
 void CRayTracer::ClearColorBuffer()
 {
-	if (ColorBuffer != NULL)
+	if (ColorBuffer != nullptr)
 	{
-		memset(ColorBuffer, 0, LineWidth * Height * 3);
+		memset(ColorBuffer, 0, static_cast<size_t>(LineWidth) * static_cast<size_t>(Height) * 3);
 	}
 }
 
@@ -247,7 +233,9 @@ int CRayTracer::GetSamples()
 
 void CRayTracer::MapHDRColors()
 {
-	if (ColorBuffer == NULL || HDRColorBuffer == NULL) return;
+	if (ColorBuffer == nullptr || HDRColorBuffer == nullptr) return;
+
+	static constexpr float LumR = 0.2125f, LumG = 0.7154f, LumB = 0.0721f;
 
 	float SumLum = 0.0f, LumWhite = 0.0f;
 	int LumNotNull = 0;
@@ -256,14 +244,12 @@ void CRayTracer::MapHDRColors()
 
 	for (int i = 0; i < WidthMHeightMSamples2; i++)
 	{
-		float Luminance = (Color->r * 0.2125f + Color->g * 0.7154f + Color->b * 0.0721f);
+		float Luminance = Color->r * LumR + Color->g * LumG + Color->b * LumB;
 
 		if (Luminance > 0.0f)
 		{
 			SumLum += Luminance;
-
 			LumNotNull++;
-
 			LumWhite = LumWhite > Luminance ? LumWhite : Luminance;
 		}
 
@@ -284,22 +270,16 @@ void CRayTracer::MapHDRColors()
 
 	Color = HDRColorBuffer;
 
-	Vector3 ColorMMappingFactor;
-
 	for (int i = 0; i < WidthMHeightMSamples2; i++)
 	{
-		float Luminance = (Color->r * 0.2125f + Color->g * 0.7154f + Color->b * 0.0721f);
+		float Luminance = Color->r * LumR + Color->g * LumG + Color->b * LumB;
 
 		float LumRel = Luminance / AvgLum;
 		float MappingFactor = LumRel * (1.0f + LumRel / LumWhite2) / (1.0f + LumRel);
 
-		ColorMMappingFactor.r = Color->r * MappingFactor;
-		ColorMMappingFactor.g = Color->g * MappingFactor;
-		ColorMMappingFactor.b = Color->b * MappingFactor;
-
-		Color->r = ColorMMappingFactor.r <= 0.0f ? 0.0f : ColorMMappingFactor.r >= 1.0f ? 1.0f : ColorMMappingFactor.r;
-		Color->g = ColorMMappingFactor.g <= 0.0f ? 0.0f : ColorMMappingFactor.g >= 1.0f ? 1.0f : ColorMMappingFactor.g;
-		Color->b = ColorMMappingFactor.b <= 0.0f ? 0.0f : ColorMMappingFactor.b >= 1.0f ? 1.0f : ColorMMappingFactor.b;
+		Color->r = Clamp01(Color->r * MappingFactor);
+		Color->g = Clamp01(Color->g * MappingFactor);
+		Color->b = Clamp01(Color->b * MappingFactor);
 
 		Color++;
 	}
@@ -316,9 +296,9 @@ void CRayTracer::MapHDRColors()
 		{
 			for (int x = 0; x < Width; x++)
 			{
-				colorbuffer[2] = (BYTE)(Color->r * 255);
-				colorbuffer[1] = (BYTE)(Color->g * 255);
-				colorbuffer[0] = (BYTE)(Color->b * 255);
+				colorbuffer[2] = ToByte(Color->r);
+				colorbuffer[1] = ToByte(Color->g);
+				colorbuffer[0] = ToByte(Color->b);
 
 				Color++;
 				colorbuffer += 3;
@@ -353,9 +333,9 @@ void CRayTracer::MapHDRColors()
 				ColorSum.g *= ODSamples2;
 				ColorSum.b *= ODSamples2;
 
-				colorbuffer[2] = (BYTE)(ColorSum.r * 255);
-				colorbuffer[1] = (BYTE)(ColorSum.g * 255);
-				colorbuffer[0] = (BYTE)(ColorSum.b * 255);
+				colorbuffer[2] = ToByte(ColorSum.r);
+				colorbuffer[1] = ToByte(ColorSum.g);
+				colorbuffer[0] = ToByte(ColorSum.b);
 
 				colorbuffer += 3;
 			}
@@ -365,11 +345,11 @@ void CRayTracer::MapHDRColors()
 	}
 }
 
-bool CRayTracer::SetSamples(int Samples)
+bool CRayTracer::SetSamples(int newSamples)
 {
-	if (this->Samples == Samples) return false;
+	if (Samples == newSamples) return false;
 
-	this->Samples = Samples;
+	Samples = newSamples;
 
 	Resize(Width, Height);
 
@@ -378,7 +358,7 @@ bool CRayTracer::SetSamples(int Samples)
 
 void CRayTracer::SwapBuffers(HDC hDC)
 {
-	if (ColorBuffer != NULL)
+	if (ColorBuffer != nullptr)
 	{
 		StretchDIBits(hDC, 0, 0, Width, Height, 0, 0, Width, Height, ColorBuffer, &ColorBufferInfo, DIB_RGB_COLORS, SRCCOPY);
 	}

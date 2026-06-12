@@ -15,21 +15,15 @@ bool CApplication::InitScene()
 		return false;
 	}
 
-	SpheresCount = 3;
+	Spheres = CreateSpheres(3);
 
-	Spheres = CreateSpheres(SpheresCount);
-
-	Spheres[0] = CSphere(Vector3(-2.0f, -1.0f, 2.0f), 0.5f, Vector3(0.0f, 0.5f, 1.0f), NULL, 0.875f);
-	Spheres[1] = CSphere(Vector3(0.0f, -1.5f, 2.0f), 0.5f, Vector3(0.0f, 0.5f, 1.0f), NULL, 0.125f, 0.875f, 1.52f);
+	Spheres[0] = CSphere(Vector3(-2.0f, -1.0f, 2.0f), 0.5f, Vector3(0.0f, 0.5f, 1.0f), nullptr, 0.875f);
+	Spheres[1] = CSphere(Vector3(0.0f, -1.5f, 2.0f), 0.5f, Vector3(0.0f, 0.5f, 1.0f), nullptr, 0.125f, 0.875f, 1.52f);
 	Spheres[2] = CSphere(Vector3(2.0f, -1.5f, -2.0f), 0.5f, Vector3(1.0f, 1.0f, 1.0f), &Earth);
 
-	QuadsCount = 21;
+	Quads = CreateQuads(21);
 
-	Quads = CreateQuads(QuadsCount);
-
-	LightsCount = 1;
-
-	Lights = CreateLights(LightsCount);
+	Lights = CreateLights(1);
 
 	Matrix4x4 R = RotationMatrix(22.5f, Vector3(0.0f, 1.0f, 0.0f));
 	Vector3 V = Vector3(2.0f, 0.0f, 2.0f);

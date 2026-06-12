@@ -36,9 +36,13 @@ protected:
 public:
 	bool Textures, SoftShadows, AmbientOcclusion;
 
-public:
 	CRayTracer();
-	~CRayTracer();
+	virtual ~CRayTracer();
+
+	CRayTracer(const CRayTracer&) = delete;
+	CRayTracer& operator=(const CRayTracer&) = delete;
+	CRayTracer(CRayTracer&&) = delete;
+	CRayTracer& operator=(CRayTracer&&) = delete;
 
 	bool Init();
 	void RayTrace(int Line);
@@ -59,9 +63,9 @@ protected:
 	CLight* CreateLights(int Count);
 
 private:
-	bool Shadow(void* Object, Vector3& Point, Vector3& LightDirection, float LightDistance);
-	Vector3 LightIntensity(void* Object, Vector3& Point, Vector3& Normal, Vector3& LightPosition, CLight* Light, float AO);
-	float AmbientOcclusionFactor(void* Object, Vector3& Point, Vector3& Normal);
-	void IlluminatePoint(void* Object, Vector3& Point, Vector3& Normal, Vector3& Color);
-	Vector3 RayTrace(Vector3& Origin, const Vector3& Ray, UINT Depth = 0, void* Object = NULL);
+	bool Shadow(void* Object, const Vector3& Point, const Vector3& LightDirection, float LightDistance);
+	Vector3 LightIntensity(void* Object, const Vector3& Point, const Vector3& Normal, const Vector3& LightPosition, CLight* Light, float AO);
+	float AmbientOcclusionFactor(void* Object, const Vector3& Point, const Vector3& Normal);
+	void IlluminatePoint(void* Object, const Vector3& Point, const Vector3& Normal, Vector3& Color);
+	Vector3 RayTrace(const Vector3& Origin, const Vector3& Ray, UINT Depth = 0, void* Object = nullptr);
 };

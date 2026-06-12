@@ -10,25 +10,14 @@ Matrix4x4::Matrix4x4()
 	M[3] = 0.0f; M[7] = 0.0f; M[11] = 0.0f; M[15] = 1.0f;
 }
 
-Matrix4x4::~Matrix4x4()
-{
-}
-
 Matrix4x4::Matrix4x4(const Matrix4x4& Matrix)
 {
-	for (int i = 0; i < 16; i++)
-	{
-		M[i] = Matrix.M[i];
-	}
+	memcpy(M, Matrix.M, sizeof(M));
 }
 
 Matrix4x4& Matrix4x4::operator = (const Matrix4x4& Matrix)
 {
-	for (int i = 0; i < 16; i++)
-	{
-		M[i] = Matrix.M[i];
-	}
-
+	memcpy(M, Matrix.M, sizeof(M));
 	return *this;
 }
 

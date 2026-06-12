@@ -10,20 +10,24 @@ extern CString ModuleDirectory, ErrorLog;
 extern CCamera Camera;
 extern CApplication Application;
 
-CWindow::CWindow()
+CWindow::CWindow() :
+	WindowName(nullptr),
+	hWnd(nullptr),
+	hDC(nullptr),
+	Width(0), Height(0), Line(0),
+	LastCurPos{}
 {
-	char* moduledirectory = new char[MAX_PATH];
-	GetModuleFileNameA(GetModuleHandleA(NULL), moduledirectory, MAX_PATH);
+	char moduledirectory[MAX_PATH];
+	GetModuleFileNameA(GetModuleHandleA(nullptr), moduledirectory, MAX_PATH);
 	*(strrchr(moduledirectory, '\\') + 1) = 0;
 	ModuleDirectory = moduledirectory;
-	delete[] moduledirectory;
 }
 
 CWindow::~CWindow()
 {
 }
 
-bool CWindow::Create(HINSTANCE hInstance, const char* WindowName, int Width, int Height)
+bool CWindow::Create(HINSTANCE hInstance, const char* windowName, int width, int height)
 {
 	WNDCLASSEX WndClassEx;
 
@@ -44,14 +48,13 @@ bool CWindow::Create(HINSTANCE hInstance, const char* WindowName, int Width, int
 		return false;
 	}
 
-	this->WindowName = WindowName;
-
-	this->Width = Width;
-	this->Height = Height;
+	WindowName = windowName;
+	Width = width;
+	Height = height;
 
 	DWORD Style = WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
 
-	if ((hWnd = CreateWindowExA(WS_EX_APPWINDOW, "Win32CPUApplicationWindow", WindowName, Style, 0, 0, Width, Height, NULL, NULL, hInstance, NULL)) == NULL)
+	if ((hWnd = CreateWindowExA(WS_EX_APPWINDOW, "Win32CPUApplicationWindow", windowName, Style, 0, 0, width, height, NULL, NULL, hInstance, NULL)) == NULL)
 	{
 		ErrorLog.Set("CreateWindowExA failed!");
 		return false;
@@ -231,12 +234,12 @@ void CWindow::OnRButtonDown(int cx, int cy)
 	LastCurPos.y = cy;
 }
 
-void CWindow::OnSize(int Width, int Height)
+void CWindow::OnSize(int width, int height)
 {
-	this->Width = Width;
-	this->Height = Height;
+	Width = width;
+	Height = height;
 
-	Application.Resize(Width, Height);
+	Application.Resize(width, height);
 
 	RePaint();
 }
@@ -255,8 +258,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 		Wnd.OnMouseMove(LOWORD(lParam), HIWORD(lParam));
 		break;
 
-	case 0x020A: // WM_MOUSWHEEL
-		Wnd.OnMouseWheel(HIWORD(wParam));
+	case WM_MOUSEWHEEL:
+		Wnd.OnMouseWheel(static_cast<short>(HIWORD(wParam)));
 		break;
 
 	case WM_KEYDOWN:

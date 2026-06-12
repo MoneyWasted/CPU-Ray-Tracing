@@ -3,6 +3,8 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#pragma warning(disable : 4201)
+
 class Vector2
 {
 public:
@@ -12,12 +14,11 @@ public:
 		struct { float r, g; };
 	};
 	Vector2() : x(0.0f), y(0.0f) {}
-	~Vector2() {}
 	Vector2(float num) : x(num), y(num) {}
 	Vector2(float x, float y) : x(x), y(y) {}
 	Vector2(const Vector2& u) : x(u.x), y(u.y) {}
 	Vector2& operator = (const Vector2& u) { x = u.x; y = u.y; return *this; }
-	Vector2 operator - () { return Vector2(-x, -y); }
+	Vector2 operator - () const { return Vector2(-x, -y); }
 	float* operator & () { return (float*)this; };
 	Vector2& operator += (float num) { x += num; y += num; return *this; }
 	Vector2& operator += (const Vector2& u) { x += u.x; y += u.y; return *this; }
@@ -50,13 +51,12 @@ public:
 		struct { float r, g, b; };
 	};
 	Vector3() : x(0.0f), y(0.0f), z(0.0f) {}
-	~Vector3() {}
 	Vector3(float num) : x(num), y(num), z(num) {}
 	Vector3(float x, float y, float z) : x(x), y(y), z(z) {}
 	Vector3(const Vector2& u, float z) : x(u.x), y(u.y), z(z) {}
 	Vector3(const Vector3& u) : x(u.x), y(u.y), z(u.z) {}
 	Vector3& operator = (const Vector3& u) { x = u.x; y = u.y; z = u.z; return *this; }
-	Vector3 operator - () { return Vector3(-x, -y, -z); }
+	Vector3 operator - () const { return Vector3(-x, -y, -z); }
 	float* operator & () { return (float*)this; }
 	operator Vector2 () { return *(Vector2*)this; }
 	Vector3& operator += (float num) { x += num; y += num; z += num; return *this; }
@@ -90,14 +90,13 @@ public:
 		struct { float r, g, b, a; };
 	};
 	Vector4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) {}
-	~Vector4() {}
 	Vector4(float num) : x(num), y(num), z(num), w(num) {}
 	Vector4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
 	Vector4(const Vector2& u, float z, float w) : x(u.x), y(u.y), z(z), w(w) {}
 	Vector4(const Vector3& u, float w) : x(u.x), y(u.y), z(u.z), w(w) {}
 	Vector4(const Vector4& u) : x(u.x), y(u.y), z(u.z), w(u.w) {}
 	Vector4& operator = (const Vector4& u) { x = u.x; y = u.y; z = u.z; w = u.w; return *this; }
-	Vector4 operator - () { return Vector4(-x, -y, -z, -w); }
+	Vector4 operator - () const { return Vector4(-x, -y, -z, -w); }
 	float* operator & () { return (float*)this; }
 	operator Vector2 () { return *(Vector2*)this; }
 	operator Vector3 () { return *(Vector3*)this; }
@@ -128,7 +127,6 @@ class Matrix4x4
 public:
 	float M[16];
 	Matrix4x4();
-	~Matrix4x4();
 	Matrix4x4(const Matrix4x4& Matrix);
 	Matrix4x4& operator = (const Matrix4x4& Matrix);
 	float& operator [] (int Index);

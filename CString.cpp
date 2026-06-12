@@ -6,20 +6,20 @@
 
 CString::CString()
 {
-	String = NULL;
+	String = nullptr;
 	Empty();
 }
 
 CString::CString(const char* DefaultString)
 {
-	String = NULL;
+	String = nullptr;
 	Empty();
 	Set(DefaultString);
 }
 
 CString::CString(const CString& DefaultString)
 {
-	String = NULL;
+	String = nullptr;
 	Empty();
 	Set(DefaultString.String);
 }
@@ -90,18 +90,18 @@ void CString::Append(const char* Format, ...)
 	int AppendixLength = _vscprintf(Format, ArgList);
 	va_end(ArgList);
 
-	char* Appendix = new char[AppendixLength + 1];
-	vsprintf_s(Appendix, AppendixLength + 1, Format, FormatArgs);
+	char* Appendix = new char[static_cast<size_t>(AppendixLength) + 1];
+	vsprintf_s(Appendix, static_cast<size_t>(AppendixLength) + 1, Format, FormatArgs);
 	va_end(FormatArgs);
 
 	char* OldString = String;
 	int OldStringLength = (int)strlen(String);
 
 	int StringLength = OldStringLength + AppendixLength;
-	String = new char[StringLength + 1];
+	String = new char[static_cast<size_t>(StringLength) + 1];
 
-	strcpy_s(String, StringLength + 1, OldString);
-	strcat_s(String, StringLength + 1, Appendix);
+	strcpy_s(String, static_cast<size_t>(StringLength) + 1, OldString);
+	strcat_s(String, static_cast<size_t>(StringLength) + 1, Appendix);
 
 	delete[] OldString;
 	delete[] Appendix;
@@ -120,8 +120,8 @@ void CString::Set(const char* Format, ...)
 	int StringLength = _vscprintf(Format, ArgList);
 	va_end(ArgList);
 
-	String = new char[StringLength + 1];
-	vsprintf_s(String, StringLength + 1, Format, FormatArgs);
+	String = new char[static_cast<size_t>(StringLength) + 1];
+	vsprintf_s(String, static_cast<size_t>(StringLength) + 1, Format, FormatArgs);
 	va_end(FormatArgs);
 }
 

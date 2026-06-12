@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+	<!-- Project Configurations -->
 	<ItemGroup Label="ProjectConfigurations">
 		<ProjectConfiguration Include="Debug|Win32">
 			<Configuration>Debug</Configuration>
@@ -27,6 +29,7 @@
 		</ProjectConfiguration>
 	</ItemGroup>
 
+	<!-- Globals -->
 	<PropertyGroup Label="Globals">
 		<VCProjectVersion>18.0</VCProjectVersion>
 		<Keyword>Win32Proj</Keyword>
@@ -38,87 +41,28 @@
 
 	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+	<!-- Configuration Properties -->
+	<PropertyGroup Label="Configuration">
 		<ConfigurationType>Application</ConfigurationType>
+		<PlatformToolset>v145</PlatformToolset>
+		<CharacterSet>Unicode</CharacterSet>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
 		<UseDebugLibraries>true</UseDebugLibraries>
-		<PlatformToolset>v145</PlatformToolset>
-		<CharacterSet>Unicode</CharacterSet>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-		<ConfigurationType>Application</ConfigurationType>
+	<PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
 		<UseDebugLibraries>false</UseDebugLibraries>
-		<PlatformToolset>v145</PlatformToolset>
 		<WholeProgramOptimization>true</WholeProgramOptimization>
-		<CharacterSet>Unicode</CharacterSet>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-		<ConfigurationType>Application</ConfigurationType>
-		<UseDebugLibraries>true</UseDebugLibraries>
-		<PlatformToolset>v145</PlatformToolset>
-		<CharacterSet>Unicode</CharacterSet>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-		<ConfigurationType>Application</ConfigurationType>
-		<UseDebugLibraries>false</UseDebugLibraries>
-		<PlatformToolset>v145</PlatformToolset>
-		<WholeProgramOptimization>true</WholeProgramOptimization>
-		<CharacterSet>Unicode</CharacterSet>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'" Label="Configuration">
-		<ConfigurationType>Application</ConfigurationType>
-		<UseDebugLibraries>true</UseDebugLibraries>
-		<PlatformToolset>v145</PlatformToolset>
-		<CharacterSet>Unicode</CharacterSet>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
-		<ConfigurationType>Application</ConfigurationType>
-		<UseDebugLibraries>false</UseDebugLibraries>
-		<PlatformToolset>v145</PlatformToolset>
-		<WholeProgramOptimization>true</WholeProgramOptimization>
-		<CharacterSet>Unicode</CharacterSet>
 	</PropertyGroup>
 
 	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-
 	<ImportGroup Label="ExtensionSettings" />
 	<ImportGroup Label="Shared" />
 
-	<ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
-				Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
-				Label="LocalAppDataPlatform" />
-	</ImportGroup>
-
-	<ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
-				Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
-				Label="LocalAppDataPlatform" />
-	</ImportGroup>
-
-	<ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
-				Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
-				Label="LocalAppDataPlatform" />
-	</ImportGroup>
-
-	<ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
-				Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
-				Label="LocalAppDataPlatform" />
-	</ImportGroup>
-
-	<ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
-				Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
-				Label="LocalAppDataPlatform" />
-	</ImportGroup>
-
-	<ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+	<!-- User Property Sheets -->
+	<ImportGroup Label="PropertySheets">
 		<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props"
 				Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')"
 				Label="LocalAppDataPlatform" />
@@ -126,6 +70,7 @@
 
 	<PropertyGroup Label="UserMacros" />
 
+	<!-- Output Directories -->
 	<PropertyGroup>
 		<TargetName>CPURayTracing</TargetName>
 		<OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
@@ -133,6 +78,7 @@
 		<PreferredToolArchitecture>x64</PreferredToolArchitecture>
 	</PropertyGroup>
 
+	<!-- All Configurations -->
 	<ItemDefinitionGroup>
 		<ClCompile>
 			<WarningLevel>Level4</WarningLevel>
@@ -141,6 +87,7 @@
 			<LanguageStandard>stdcpp20</LanguageStandard>
 			<PrecompiledHeader>Use</PrecompiledHeader>
 			<MultiProcessorCompilation>true</MultiProcessorCompilation>
+			<OpenMPSupport>true</OpenMPSupport>
 		</ClCompile>
 		<Link>
 			<SubSystem>Windows</SubSystem>
@@ -151,68 +98,84 @@
 		</Manifest>
 	</ItemDefinitionGroup>
 
+	<!-- Debug -->
 	<ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
 		<ClCompile>
 			<Optimization>Disabled</Optimization>
+			<DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+			<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
 			<PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 		</ClCompile>
 	</ItemDefinitionGroup>
 
+	<!-- Release -->
 	<ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
 		<ClCompile>
-			<FunctionLevelLinking>true</FunctionLevelLinking>
-			<IntrinsicFunctions>true</IntrinsicFunctions>
 			<Optimization>MaxSpeed</Optimization>
 			<FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+			<FunctionLevelLinking>true</FunctionLevelLinking>
+			<IntrinsicFunctions>true</IntrinsicFunctions>
+			<FloatingPointModel>Fast</FloatingPointModel>
+			<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
 			<PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 		</ClCompile>
 		<Link>
 			<EnableCOMDATFolding>true</EnableCOMDATFolding>
 			<OptimizeReferences>true</OptimizeReferences>
+			<LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
 		</Link>
 	</ItemDefinitionGroup>
 
+	<!-- Win32 -->
 	<ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
 		<ClCompile>
 			<PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 		</ClCompile>
 	</ItemDefinitionGroup>
 
+	<!-- x64 Release: AVX2 SIMD -->
+	<ItemDefinitionGroup Condition="'$(Configuration)'=='Release' And '$(Platform)'=='x64'">
+		<ClCompile>
+			<EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+		</ClCompile>
+	</ItemDefinitionGroup>
+
+	<!-- Source Files -->
 	<ItemGroup>
-		<ClCompile Include="CCamera.cpp" />
-		<ClCompile Include="glmath.cpp" />
-		<ClCompile Include="CLight.cpp" />
-		<ClCompile Include="Main.cpp" />
 		<ClCompile Include="CApplication.cpp" />
+		<ClCompile Include="CCamera.cpp" />
+		<ClCompile Include="CLight.cpp" />
 		<ClCompile Include="CQuad.cpp" />
 		<ClCompile Include="CRayTracer.cpp" />
-		<ClCompile Include="RayTracerLighting.cpp" />
-		<ClCompile Include="RayTracerTrace.cpp" />
-		<ClCompile Include="CRayTracerData.cpp" />
 		<ClCompile Include="CSphere.cpp" />
-		<ClCompile Include="stdafx.cpp">
-			<PrecompiledHeader>Create</PrecompiledHeader>
-		</ClCompile>
 		<ClCompile Include="CString.cpp" />
 		<ClCompile Include="CTexture.cpp" />
 		<ClCompile Include="CWindow.cpp" />
+		<ClCompile Include="glmath.cpp" />
+		<ClCompile Include="Main.cpp" />
+		<ClCompile Include="RayTracerLighting.cpp" />
+		<ClCompile Include="RayTracerTrace.cpp" />
+		<ClCompile Include="stdafx.cpp">
+			<PrecompiledHeader>Create</PrecompiledHeader>
+		</ClCompile>
 	</ItemGroup>
 
+	<!-- Header Files -->
 	<ItemGroup>
-		<ClInclude Include="CCamera.h" />
-		<ClInclude Include="glmath.h" />
-		<ClInclude Include="CLight.h" />
 		<ClInclude Include="CApplication.h" />
+		<ClInclude Include="CCamera.h" />
+		<ClInclude Include="CLight.h" />
 		<ClInclude Include="CQuad.h" />
 		<ClInclude Include="CRayTracer.h" />
-		<ClInclude Include="CRayTracerData.h" />
 		<ClInclude Include="CSphere.h" />
-		<ClInclude Include="stdafx.h" />
 		<ClInclude Include="CString.h" />
 		<ClInclude Include="CTexture.h" />
 		<ClInclude Include="CWindow.h" />
+		<ClInclude Include="glmath.h" />
+		<ClInclude Include="stdafx.h" />
 	</ItemGroup>
 
+	<!-- Assets -->
 	<ItemGroup>
 		<Image Include="cube.jpg" />
 		<Image Include="earth.jpg" />

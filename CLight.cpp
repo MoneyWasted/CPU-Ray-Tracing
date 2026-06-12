@@ -1,6 +1,8 @@
 #include "stdafx.h"
 
 #include "CLight.h"
+#include "CSphere.h"
+#include "CQuad.h"
 
 CLight::CLight()
 {
@@ -11,8 +13,8 @@ CLight::CLight()
 	LinearAttenuation = 0.0f;
 	QuadraticAttenuation = 0.0f;
 
-	Sphere = NULL;
-	Quad = NULL;
+	Sphere = nullptr;
+	Quad = nullptr;
 }
 
 CLight::~CLight()

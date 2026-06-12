@@ -2,19 +2,13 @@
 
 #include "CCamera.h"
 
-CCamera::CCamera()
-{
-	X = Vector3(1.0, 0.0, 0.0);
-	Y = Vector3(0.0, 1.0, 0.0);
-	Z = Vector3(0.0, 0.0, 1.0);
-
-	Reference = Vector3(0.0, 0.0, 0.0);
-	Position = Vector3(0.0, 0.0, 5.0);
-
-	Bin = BiasMatrixInverse();
-}
-
-CCamera::~CCamera()
+CCamera::CCamera() :
+	X(1.0f, 0.0f, 0.0f),
+	Y(0.0f, 1.0f, 0.0f),
+	Z(0.0f, 0.0f, 1.0f),
+	Reference(0.0f),
+	Position(0.0f, 0.0f, 5.0f),
+	Bin(BiasMatrixInverse())
 {
 }
 
@@ -27,10 +21,10 @@ void CCamera::CalculateRayMatrix()
 	RayMatrix = Vin * Pin * Bin * VPin;
 }
 
-void CCamera::LookAt(const Vector3& Reference, const Vector3& Position, bool RotateAroundReference)
+void CCamera::LookAt(const Vector3& reference, const Vector3& position, bool RotateAroundReference)
 {
-	this->Reference = Reference;
-	this->Position = Position;
+	Reference = reference;
+	Position = position;
 
 	Z = normalize(Position - Reference);
 	X = normalize(cross(Vector3(0.0f, 1.0f, 0.0f), Z));
@@ -38,8 +32,8 @@ void CCamera::LookAt(const Vector3& Reference, const Vector3& Position, bool Rot
 
 	if (!RotateAroundReference)
 	{
-		this->Reference = this->Position;
-		this->Position += Z * 0.05f;
+		Reference = Position;
+		Position += Z * 0.05f;
 	}
 
 	CalculateRayMatrix();
@@ -47,57 +41,26 @@ void CCamera::LookAt(const Vector3& Reference, const Vector3& Position, bool Rot
 
 bool CCamera::OnKeyDown(UINT nChar)
 {
-	float Distance = 0.125f;
-
-	if (GetKeyState(VK_CONTROL) & 0x80)
-	{
-		Distance *= 0.5f;
-	}
-
-	if (GetKeyState(VK_SHIFT) & 0x80)
-	{
-		Distance *= 2.0f;
-	}
+	float distance = 0.125f;
+	if (GetKeyState(VK_CONTROL) & 0x80) distance *= 0.5f;
+	if (GetKeyState(VK_SHIFT) & 0x80) distance *= 2.0f;
 
 	Vector3 Up(0.0f, 1.0f, 0.0f);
 	Vector3 Right = X;
 	Vector3 Forward = cross(Up, Right);
 
-	Up *= Distance;
-	Right *= Distance;
-	Forward *= Distance;
+	Up *= distance;
+	Right *= distance;
+	Forward *= distance;
 
 	Vector3 Movement;
 
-	if (nChar == 'W')
-	{
-		Movement += Forward;
-	}
-
-	if (nChar == 'S')
-	{
-		Movement -= Forward;
-	}
-
-	if (nChar == 'A')
-	{
-		Movement -= Right;
-	}
-
-	if (nChar == 'D')
-	{
-		Movement += Right;
-	}
-
-	if (nChar == 'R')
-	{
-		Movement += Up;
-	}
-
-	if (nChar == 'F')
-	{
-		Movement -= Up;
-	}
+	if (nChar == 'W') Movement += Forward;
+	if (nChar == 'S') Movement -= Forward;
+	if (nChar == 'A') Movement -= Right;
+	if (nChar == 'D') Movement += Right;
+	if (nChar == 'R') Movement += Up;
+	if (nChar == 'F') Movement -= Up;
 
 	Reference += Movement;
 	Position += Movement;
@@ -107,8 +70,7 @@ bool CCamera::OnKeyDown(UINT nChar)
 
 void CCamera::OnMouseMove(int dx, int dy)
 {
-	float sensitivity = 0.25f;
-
+	constexpr float sensitivity = 0.25f;
 	float hangle = (float)dx * sensitivity;
 	float vangle = (float)dy * sensitivity;
 
@@ -136,12 +98,12 @@ void CCamera::OnMouseWheel(short zDelta)
 {
 	Position -= Reference;
 
-	if (zDelta < 0 && length(Position) < 500.0f)
+	float distance = length(Position);
+	if (zDelta < 0 && distance < 500.0f)
 	{
 		Position += Position * 0.1f;
 	}
-
-	if (zDelta > 0 && length(Position) > 0.05f)
+	else if (zDelta > 0 && distance > 0.05f)
 	{
 		Position -= Position * 0.1f;
 	}

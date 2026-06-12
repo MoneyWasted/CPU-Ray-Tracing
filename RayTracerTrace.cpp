@@ -5,23 +5,33 @@
 #include "CSphere.h"
 #include "CLight.h"
 #include "CTexture.h"
-#include "CRayTracerData.h"
 
-float M_1_PI_2 = (float)M_1_PI * 0.5f;
+static const float M_1_PI_2 = (float)M_1_PI * 0.5f;
 
-Vector3 CRayTracer::RayTrace(Vector3& Origin, const Vector3& Ray, UINT Depth, void* Object)
+static constexpr UINT MaxRayDepth = 8;
+
+Vector3 CRayTracer::RayTrace(const Vector3& Origin, const Vector3& Ray, UINT Depth, void* Object)
 {
-	CRayTracerData Data;
+	float distance = 1048576.0f;
+	float testDistance = 0.0f;
+	Vector3 hitPoint;
+	Vector3 testPoint;
+	CSphere* hitSphere = nullptr;
+	CQuad* hitQuad = nullptr;
+	CLight* hitLight = nullptr;
+	Vector3 color;
+
+	if (Depth >= MaxRayDepth) return color;
 
 	for (CSphere* Sphere = Spheres; Sphere < LastSphere; Sphere++)
 	{
 		if (Sphere == Object) continue;
 
-		if (Sphere->Intersect(Origin, Ray, Data.Distance, Data.TestDistance, Data.TestPoint))
+		if (Sphere->Intersect(Origin, Ray, distance, testDistance, testPoint))
 		{
-			Data.Point = Data.TestPoint;
-			Data.Distance = Data.TestDistance;
-			Data.Sphere = Sphere;
+			hitPoint = testPoint;
+			distance = testDistance;
+			hitSphere = Sphere;
 		}
 	}
 
@@ -29,11 +39,11 @@ Vector3 CRayTracer::RayTrace(Vector3& Origin, const Vector3& Ray, UINT Depth, vo
 	{
 		if (Quad == Object) continue;
 
-		if (Quad->Intersect(Origin, Ray, Data.Distance, Data.TestDistance, Data.TestPoint))
+		if (Quad->Intersect(Origin, Ray, distance, testDistance, testPoint))
 		{
-			Data.Point = Data.TestPoint;
-			Data.Distance = Data.TestDistance;
-			Data.Quad = Quad;
+			hitPoint = testPoint;
+			distance = testDistance;
+			hitQuad = Quad;
 		}
 	}
 
@@ -41,90 +51,90 @@ Vector3 CRayTracer::RayTrace(Vector3& Origin, const Vector3& Ray, UINT Depth, vo
 	{
 		if (Light->Sphere)
 		{
-			if (Light->Sphere->Intersect(Origin, Ray, Data.Distance, Data.TestDistance, Data.TestPoint))
+			if (Light->Sphere->Intersect(Origin, Ray, distance, testDistance, testPoint))
 			{
-				Data.Point = Data.TestPoint;
-				Data.Distance = Data.TestDistance;
-				Data.Light = Light;
+				hitPoint = testPoint;
+				distance = testDistance;
+				hitLight = Light;
 			}
 		}
 		else
 		{
-			if (Light->Quad->Intersect(Origin, Ray, Data.Distance, Data.TestDistance, Data.TestPoint))
+			if (Light->Quad->Intersect(Origin, Ray, distance, testDistance, testPoint))
 			{
-				Data.Point = Data.TestPoint;
-				Data.Distance = Data.TestDistance;
-				Data.Light = Light;
+				hitPoint = testPoint;
+				distance = testDistance;
+				hitLight = Light;
 			}
 		}
 	}
 
-	if (Data.Light)
+	if (hitLight)
 	{
-		Data.Color = Data.Light->Sphere ? Data.Light->Sphere->Color : Data.Light->Quad->Color;
+		color = hitLight->Sphere ? hitLight->Sphere->Color : hitLight->Quad->Color;
 	}
-	else if (Data.Quad)
+	else if (hitQuad)
 	{
-		Data.Color = Data.Quad->Color;
+		color = hitQuad->Color;
 
-		if (Textures && Data.Quad->Texture)
+		if (Textures && hitQuad->Texture)
 		{
-			float s = dot(Data.Quad->T, Data.Point) - Data.Quad->O.x;
-			float t = dot(Data.Quad->B, Data.Point) - Data.Quad->O.y;
+			float s = dot(hitQuad->T, hitPoint) - hitQuad->O.x;
+			float t = dot(hitQuad->B, hitPoint) - hitQuad->O.y;
 
-			Data.Color *= Data.Quad->Texture->GetColorBilinear(s, t);
+			color *= hitQuad->Texture->GetColorBilinear(s, t);
 		}
 
-		IlluminatePoint(Data.Quad, Data.Point, Data.Quad->N, Data.Color);
+		IlluminatePoint(hitQuad, hitPoint, hitQuad->N, color);
 
-		if (Data.Quad->Reflection > 0.0f)
+		if (hitQuad->Reflection > 0.0f)
 		{
-			Vector3 ReflectedRay = reflect(Ray, Data.Quad->N);
+			Vector3 ReflectedRay = reflect(Ray, hitQuad->N);
 
-			Data.Color = mix(Data.Color, RayTrace(Data.Point, ReflectedRay, Depth + 1, Data.Quad), Data.Quad->Reflection);
+			color = mix(color, RayTrace(hitPoint, ReflectedRay, Depth + 1, hitQuad), hitQuad->Reflection);
 		}
 	}
-	else if (Data.Sphere)
+	else if (hitSphere)
 	{
-		Data.Color = Data.Sphere->Color;
+		color = hitSphere->Color;
 
-		Vector3 Normal = (Data.Point - Data.Sphere->Position) * Data.Sphere->ODRadius;
+		Vector3 Normal = (hitPoint - hitSphere->Position) * hitSphere->ODRadius;
 
-		if (Textures && Data.Sphere->Texture)
+		if (Textures && hitSphere->Texture)
 		{
 			float s = atan2f(Normal.x, Normal.z) * M_1_PI_2 + 0.5f;
 			float t = asinf(Normal.y < -1.0f ? -1.0f : Normal.y > 1.0f ? 1.0f : Normal.y) * (float)M_1_PI + 0.5f;
 
-			Data.Color *= Data.Sphere->Texture->GetColorBilinear(s, t);
+			color *= hitSphere->Texture->GetColorBilinear(s, t);
 		}
 
-		IlluminatePoint(Data.Sphere, Data.Point, Normal, Data.Color);
+		IlluminatePoint(hitSphere, hitPoint, Normal, color);
 
-		if (Data.Sphere->Refraction > 0.0f)
+		if (hitSphere->Refraction > 0.0f)
 		{
-			Vector3 RefractedRay = refract(Ray, Normal, Data.Sphere->ODEta);
+			Vector3 RefractedRay = refract(Ray, Normal, hitSphere->ODEta);
 
-			Vector3 L = Data.Sphere->Position - Data.Point;
+			Vector3 L = hitSphere->Position - hitPoint;
 			float LdotRR = dot(L, RefractedRay);
 			float D2 = length2(L) - LdotRR * LdotRR;
-			float Distance = LdotRR + sqrtf(Data.Sphere->Radius2 - D2);
+			float Distance = LdotRR + sqrtf(hitSphere->Radius2 - D2);
 
-			Vector3 NewPoint = RefractedRay * Distance + Data.Point;
+			Vector3 NewPoint = RefractedRay * Distance + hitPoint;
 
-			Vector3 NewNormal = (Data.Sphere->Position - NewPoint) * Data.Sphere->ODRadius;
+			Vector3 NewNormal = (hitSphere->Position - NewPoint) * hitSphere->ODRadius;
 
-			RefractedRay = refract(RefractedRay, NewNormal, Data.Sphere->Eta);
+			RefractedRay = refract(RefractedRay, NewNormal, hitSphere->Eta);
 
-			Data.Color = mix(Data.Color, RayTrace(NewPoint, RefractedRay, Depth + 1, Data.Sphere), Data.Sphere->Refraction);
+			color = mix(color, RayTrace(NewPoint, RefractedRay, Depth + 1, hitSphere), hitSphere->Refraction);
 		}
 
-		if (Data.Sphere->Reflection > 0.0f)
+		if (hitSphere->Reflection > 0.0f)
 		{
 			Vector3 ReflectedRay = reflect(Ray, Normal);
 
-			Data.Color = mix(Data.Color, RayTrace(Data.Point, ReflectedRay, Depth + 1, Data.Sphere), Data.Sphere->Reflection);
+			color = mix(color, RayTrace(hitPoint, ReflectedRay, Depth + 1, hitSphere), hitSphere->Reflection);
 		}
 	}
 
-	return Data.Color;
+	return color;
 }

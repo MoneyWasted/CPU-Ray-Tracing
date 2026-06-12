@@ -13,10 +13,10 @@ public:
 
 public:
 	CQuad();
-	CQuad(const Vector3& a, const Vector3& b, const Vector3& c, const Vector3& d, const Vector3& Color, CTexture* Texture = NULL, float Reflection = 0.0f, float Refraction = 0.0f, float Eta = 1.0f);
+	CQuad(const Vector3& a, const Vector3& b, const Vector3& c, const Vector3& d, const Vector3& Color, CTexture* Texture = nullptr, float Reflection = 0.0f, float Refraction = 0.0f, float Eta = 1.0f);
 
 	bool Inside(const Vector3& Point);
-	bool Intersect(Vector3& Origin, const Vector3& Ray, float MaxDistance, float& Distance, Vector3& Point);
-	bool Intersect(Vector3& Origin, const Vector3& Ray, float MaxDistance, float& Distance);
-	bool Intersect(Vector3& Origin, const Vector3& Ray, float MaxDistance);
+	bool Intersect(const Vector3& Origin, const Vector3& Ray, float MaxDistance, float& Distance, Vector3& Point);
+	bool Intersect(const Vector3& Origin, const Vector3& Ray, float MaxDistance, float& Distance);
+	bool Intersect(const Vector3& Origin, const Vector3& Ray, float MaxDistance);
 };

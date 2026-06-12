@@ -5,10 +5,10 @@
 #include "CSphere.h"
 #include "CLight.h"
 
-float TDRM = 2.0f / (float)RAND_MAX;
-float ODRM = 1.0f / (float)RAND_MAX;
+static const float TDRM = 2.0f / (float)RAND_MAX;
+static const float ODRM = 1.0f / (float)RAND_MAX;
 
-bool CRayTracer::Shadow(void* Object, Vector3& Point, Vector3& LightDirection, float LightDistance)
+bool CRayTracer::Shadow(void* Object, const Vector3& Point, const Vector3& LightDirection, float LightDistance)
 {
 	for (CSphere* Sphere = Spheres; Sphere < LastSphere; Sphere++)
 	{
@@ -33,7 +33,7 @@ bool CRayTracer::Shadow(void* Object, Vector3& Point, Vector3& LightDirection, f
 	return false;
 }
 
-Vector3 CRayTracer::LightIntensity(void* Object, Vector3& Point, Vector3& Normal, Vector3& LightPosition, CLight* Light, float AO)
+Vector3 CRayTracer::LightIntensity(void* Object, const Vector3& Point, const Vector3& Normal, const Vector3& LightPosition, CLight* Light, float AO)
 {
 	Vector3 LightDirection = LightPosition - Point;
 
@@ -72,7 +72,7 @@ Vector3 CRayTracer::LightIntensity(void* Object, Vector3& Point, Vector3& Normal
 	return (Light->Sphere ? Light->Sphere->Color : Light->Quad->Color) * (Light->Ambient * AO / Attenuation);
 }
 
-float CRayTracer::AmbientOcclusionFactor(void* Object, Vector3& Point, Vector3& Normal)
+float CRayTracer::AmbientOcclusionFactor(void* Object, const Vector3& Point, const Vector3& Normal)
 {
 	float AO = 0.0f;
 
@@ -116,7 +116,7 @@ float CRayTracer::AmbientOcclusionFactor(void* Object, Vector3& Point, Vector3& 
 	return 1.0f - AO * ODGISamplesMAmbientOcclusionIntensity;
 }
 
-void CRayTracer::IlluminatePoint(void* Object, Vector3& Point, Vector3& Normal, Vector3& Color)
+void CRayTracer::IlluminatePoint(void* Object, const Vector3& Point, const Vector3& Normal, Vector3& Color)
 {
 	float AO = 1.0f;
 
@@ -159,7 +159,7 @@ void CRayTracer::IlluminatePoint(void* Object, Vector3& Point, Vector3& Normal, 
 			{
 				for (int i = 0; i < GISamples; i++)
 				{
-					Vector3 RandomRay = /*normalize(*/Vector3(TDRM * (float)rand() - 1.0f, TDRM * (float)rand() - 1.0f, TDRM * (float)rand() - 1.0f)/*)*/;
+					Vector3 RandomRay = Vector3(TDRM * (float)rand() - 1.0f, TDRM * (float)rand() - 1.0f, TDRM * (float)rand() - 1.0f);
 
 					Vector3 RandomLightPosition = RandomRay * Light->Sphere->Radius + Light->Sphere->Position;
 
