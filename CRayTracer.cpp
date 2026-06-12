@@ -42,7 +42,8 @@ CRayTracer::CRayTracer() :
 }
 
 CRayTracer::~CRayTracer()
-{}
+{
+}
 
 CQuad* CRayTracer::CreateQuads(int Count)
 {
