@@ -5,6 +5,11 @@
 #include "CQuad.h"
 #include "CSphere.h"
 #include "CLight.h"
+#include "CTexture.h"
+#include "CGPURayTracer.h"
+#include "CWindow.h"
+
+extern CWindow Wnd;
 
 namespace
 {
@@ -24,7 +29,7 @@ namespace
 CRayTracer::CRayTracer() :
 	ColorBuffer(nullptr),
 	HDRColorBuffer(nullptr),
-	Width(0), LineWidth(0), Height(0),
+	Width(0), Height(0),
 	Samples(1),
 	GISamples(16),
 	WidthMSamples(0), HeightMSamples(0), WidthMHeightMSamples2(0),
@@ -36,7 +41,8 @@ CRayTracer::CRayTracer() :
 	Spheres(nullptr), LastSphere(nullptr),
 	Lights(nullptr), LastLight(nullptr),
 	QuadsCount(0), SpheresCount(0), LightsCount(0),
-	Textures(true), SoftShadows(false), AmbientOcclusion(false)
+	Textures(true), SoftShadows(false), AmbientOcclusion(false),
+	GPUTracer(nullptr), UseGPUTracer(false), SceneDirty(true), SceneUploaded(false)
 {
 	srand((unsigned int)GetTickCount64());
 }
@@ -79,6 +85,9 @@ bool CRayTracer::Init()
 		return false;
 	}
 
+	SceneDirty = true;
+	SceneUploaded = false;
+
 	LastQuad = Quads ? Quads + QuadsCount : nullptr;
 	LastSphere = Spheres ? Spheres + SpheresCount : nullptr;
 	LastLight = Lights ? Lights + LightsCount : nullptr;
@@ -91,7 +100,13 @@ void CRayTracer::RayTrace(int Line)
 	if (ColorBuffer == nullptr || HDRColorBuffer == nullptr) return;
 
 	Vector3* hdrcolorbuffer;
-	BYTE* colorbuffer = LineWidth * Line * 3 + ColorBuffer;
+	BYTE* colorbuffer = static_cast<size_t>(Width) * static_cast<size_t>(Line) * 4 + ColorBuffer;
+
+	// Legacy CPU rendering path remains for fallback only.
+	ID3D11Device* device = Wnd.GetD3DDevice();
+	ID3D11DeviceContext* context = Wnd.GetD3DDeviceContext();
+	UNREFERENCED_PARAMETER(device);
+	UNREFERENCED_PARAMETER(context);
 
 	if (Samples == 1)
 	{
@@ -103,11 +118,12 @@ void CRayTracer::RayTrace(int Line)
 
 			*hdrcolorbuffer++ = Color;
 
-			colorbuffer[2] = ToByte(Color.r);
-			colorbuffer[1] = ToByte(Color.g);
 			colorbuffer[0] = ToByte(Color.b);
+			colorbuffer[1] = ToByte(Color.g);
+			colorbuffer[2] = ToByte(Color.r);
+			colorbuffer[3] = 255;
 
-			colorbuffer += 3;
+			colorbuffer += 4;
 		}
 	}
 	else
@@ -140,11 +156,12 @@ void CRayTracer::RayTrace(int Line)
 			SamplesSum.g *= ODSamples2;
 			SamplesSum.b *= ODSamples2;
 
-			colorbuffer[2] = ToByte(SamplesSum.r);
-			colorbuffer[1] = ToByte(SamplesSum.g);
 			colorbuffer[0] = ToByte(SamplesSum.b);
+			colorbuffer[1] = ToByte(SamplesSum.g);
+			colorbuffer[2] = ToByte(SamplesSum.r);
+			colorbuffer[3] = 255;
 
-			colorbuffer += 3;
+			colorbuffer += 4;
 		}
 	}
 }
@@ -153,6 +170,7 @@ void CRayTracer::Resize(int newWidth, int newHeight)
 {
 	Width = newWidth;
 	Height = newHeight;
+	SceneDirty = true;
 
 	ColorBufferStorage.clear();
 	HDRColorBufferStorage.clear();
@@ -161,18 +179,8 @@ void CRayTracer::Resize(int newWidth, int newHeight)
 
 	if (Width > 0 && Height > 0)
 	{
-		LineWidth = (Width + 3) & ~3;
-
-		ColorBufferStorage.resize(static_cast<size_t>(LineWidth) * static_cast<size_t>(Height) * 3);
+		ColorBufferStorage.resize(static_cast<size_t>(Width) * static_cast<size_t>(Height) * 4);
 		ColorBuffer = ColorBufferStorage.data();
-
-		memset(&ColorBufferInfo, 0, sizeof(BITMAPINFOHEADER));
-		ColorBufferInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		ColorBufferInfo.bmiHeader.biPlanes = 1;
-		ColorBufferInfo.bmiHeader.biBitCount = 24;
-		ColorBufferInfo.bmiHeader.biCompression = BI_RGB;
-		ColorBufferInfo.bmiHeader.biWidth = LineWidth;
-		ColorBufferInfo.bmiHeader.biHeight = Height;
 
 		WidthMSamples = Width * Samples;
 		HeightMSamples = Height * Samples;
@@ -194,11 +202,19 @@ void CRayTracer::Resize(int newWidth, int newHeight)
 
 		Camera.CalculateRayMatrix();
 	}
+
+	if (GPUTracer)
+	{
+		GPUTracer->Resize(Width, Height);
+	}
 }
 
 void CRayTracer::Destroy()
 {
 	DestroyTextures();
+
+	GPUTracer.reset();
+	UseGPUTracer = false;
 
 	QuadStorage.reset();
 	SphereStorage.reset();
@@ -223,13 +239,110 @@ void CRayTracer::ClearColorBuffer()
 {
 	if (ColorBuffer != nullptr)
 	{
-		memset(ColorBuffer, 0, static_cast<size_t>(LineWidth) * static_cast<size_t>(Height) * 3);
+		memset(ColorBuffer, 0, static_cast<size_t>(Width) * static_cast<size_t>(Height) * 4);
 	}
 }
 
 int CRayTracer::GetSamples()
 {
 	return Samples * Samples;
+}
+
+void CRayTracer::CollectSceneTextures(std::vector<CTexture*>& textures) const
+{
+	UNREFERENCED_PARAMETER(textures);
+}
+
+bool CRayTracer::UseGPUBackend(ID3D11Device* device, ID3D11DeviceContext* context, int width, int height)
+{
+	if (device == nullptr || context == nullptr)
+	{
+		return false;
+	}
+
+	GPUTracer.reset(new CGPURayTracer(device, context));
+	if (!GPUTracer->Init(width, height))
+	{
+		GPUTracer.reset();
+		return false;
+	}
+
+	UseGPUTracer = true;
+	return true;
+}
+
+void CRayTracer::DisableGPUBackend()
+{
+	GPUTracer.reset();
+	UseGPUTracer = false;
+}
+
+bool CRayTracer::RenderGPU(const CCamera& camera)
+{
+	if (Width <= 0 || Height <= 0)
+	{
+		return false;
+	}
+
+	if (!GPUTracer)
+	{
+		ID3D11Device* device = Wnd.GetD3DDevice();
+		ID3D11DeviceContext* context = Wnd.GetD3DDeviceContext();
+		if (device == nullptr || context == nullptr)
+		{
+			return false;
+		}
+
+		if (!UseGPUBackend(device, context, Width, Height))
+		{
+			return false;
+		}
+	}
+
+	std::vector<CTexture*> textures;
+	if (SceneDirty || !SceneUploaded)
+	{
+		CollectSceneTextures(textures);
+	}
+
+	std::vector<CSphere*> spheres;
+	spheres.reserve(static_cast<size_t>(SpheresCount));
+	for (int i = 0; i < SpheresCount; ++i)
+	{
+		spheres.push_back(&Spheres[i]);
+	}
+
+	std::vector<CQuad*> quads;
+	quads.reserve(static_cast<size_t>(QuadsCount));
+	for (int i = 0; i < QuadsCount; ++i)
+	{
+		quads.push_back(&Quads[i]);
+	}
+
+	std::vector<CLight*> lights;
+	lights.reserve(static_cast<size_t>(LightsCount));
+	for (int i = 0; i < LightsCount; ++i)
+	{
+		lights.push_back(&Lights[i]);
+	}
+
+	if (SceneDirty || !SceneUploaded)
+	{
+		if (!GPUTracer->UpdateScene(spheres, quads, lights, textures))
+		{
+			return false;
+		}
+
+		SceneDirty = false;
+		SceneUploaded = true;
+	}
+
+	return GPUTracer->Trace(camera, Samples, Textures, SoftShadows, AmbientOcclusion, AmbientOcclusionIntensity);
+}
+
+bool CRayTracer::PresentGPU(ID3D11Texture2D* backBufferTexture)
+{
+	return GPUTracer && GPUTracer->Present(backBufferTexture);
 }
 
 void CRayTracer::MapHDRColors()
@@ -285,8 +398,6 @@ void CRayTracer::MapHDRColors()
 		Color++;
 	}
 
-	int LineWidthSWidthM3 = (LineWidth - Width) * 3;
-
 	BYTE* colorbuffer = ColorBuffer;
 
 	if (Samples == 1)
@@ -297,15 +408,14 @@ void CRayTracer::MapHDRColors()
 		{
 			for (int x = 0; x < Width; x++)
 			{
-				colorbuffer[2] = ToByte(Color->r);
-				colorbuffer[1] = ToByte(Color->g);
 				colorbuffer[0] = ToByte(Color->b);
+				colorbuffer[1] = ToByte(Color->g);
+				colorbuffer[2] = ToByte(Color->r);
+				colorbuffer[3] = 255;
 
 				Color++;
-				colorbuffer += 3;
+				colorbuffer += 4;
 			}
-
-			colorbuffer += LineWidthSWidthM3;
 		}
 	}
 	else
@@ -334,14 +444,13 @@ void CRayTracer::MapHDRColors()
 				ColorSum.g *= ODSamples2;
 				ColorSum.b *= ODSamples2;
 
-				colorbuffer[2] = ToByte(ColorSum.r);
-				colorbuffer[1] = ToByte(ColorSum.g);
 				colorbuffer[0] = ToByte(ColorSum.b);
+				colorbuffer[1] = ToByte(ColorSum.g);
+				colorbuffer[2] = ToByte(ColorSum.r);
+				colorbuffer[3] = 255;
 
-				colorbuffer += 3;
+				colorbuffer += 4;
 			}
-
-			colorbuffer += LineWidthSWidthM3;
 		}
 	}
 }
@@ -357,10 +466,3 @@ bool CRayTracer::SetSamples(int newSamples)
 	return true;
 }
 
-void CRayTracer::SwapBuffers(HDC hDC)
-{
-	if (ColorBuffer != nullptr)
-	{
-		StretchDIBits(hDC, 0, 0, Width, Height, 0, 0, Width, Height, ColorBuffer, &ColorBufferInfo, DIB_RGB_COLORS, SRCCOPY);
-	}
-}

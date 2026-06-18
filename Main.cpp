@@ -28,7 +28,7 @@ int APIENTRY WinMain(
 		return 0;
 	}
 
-	if (Wnd.Create(hInstance, "CPU Ray Tracer", 800, 600))
+	if (Wnd.Create(hInstance, "GPU Path Tracer", 800, 600))
 	{
 		Wnd.Show();
 		Wnd.MsgLoop();

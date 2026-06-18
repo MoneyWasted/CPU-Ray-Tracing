@@ -10,6 +10,7 @@ private:
 
 	bool InitScene() override;
 	void DestroyTextures() override;
+	void CollectSceneTextures(std::vector<CTexture*>& textures) const override;
 
 public:
 	CApplication() = default;

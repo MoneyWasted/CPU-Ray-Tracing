@@ -70,4 +70,11 @@ void CApplication::DestroyTextures()
 	Earth.Destroy();
 }
 
+void CApplication::CollectSceneTextures(std::vector<CTexture*>& textures) const
+{
+	if (Floor.HasData()) textures.push_back(const_cast<CTexture*>(&Floor));
+	if (Cube.HasData()) textures.push_back(const_cast<CTexture*>(&Cube));
+	if (Earth.HasData()) textures.push_back(const_cast<CTexture*>(&Earth));
+}
+
 CApplication Application;
